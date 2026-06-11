@@ -1,23 +1,31 @@
 import { useState } from 'react'
-import { ArrowUpRight, Check, Images, Search, SlidersHorizontal } from 'lucide-react'
+import { ArrowUpRight, Check, ChevronDown, Images, Menu, MonitorPlay, Search, SlidersHorizontal, X } from 'lucide-react'
 import './App.css'
-import { models, type FeatureId, type ImageAsset, type ModelId } from './data/models'
+import { models, type FeatureId, type ImageAsset, type ModelId, type ScreenCapture } from './data/models'
 
 function App() {
   const [activeModelId, setActiveModelId] = useState<ModelId>('q05')
   const [activeFeatureId, setActiveFeatureId] = useState<FeatureId>('overview')
   const [selectedImageId, setSelectedImageId] = useState('q05-hero')
   const [query, setQuery] = useState('')
+  const [isGuideMenuOpen, setIsGuideMenuOpen] = useState(false)
 
   const activeModel = models.find((model) => model.id === activeModelId) ?? models[0]
   const activeFeature = activeModel.features.find((feature) => feature.id === activeFeatureId) ?? activeModel.features[0]
+  const allSelectableImages = [...activeModel.images, ...activeModel.screenCaptures]
   const selectedImage =
-    activeModel.images.find((image) => image.id === selectedImageId) ?? activeFeature?.image ?? activeModel.images[0]
+    allSelectableImages.find((image) => image.id === selectedImageId) ?? activeFeature?.image ?? activeModel.images[0]
   const normalizedQuery = query.trim().toLocaleLowerCase()
   const galleryImages = activeModel.images.filter((image) => {
     if (image.kind === 'hero') return false
     if (!normalizedQuery) return true
     return `${image.title} ${image.alt}`.toLocaleLowerCase().includes(normalizedQuery)
+  })
+  const screenCaptures = activeModel.screenCaptures.filter((capture) => {
+    const searchableText = `${capture.title} ${capture.alt} ${capture.note} ${capture.sourceVideo}`.toLocaleLowerCase()
+    if (normalizedQuery) return searchableText.includes(normalizedQuery)
+    if (activeFeatureId === 'overview') return true
+    return capture.featureId === activeFeatureId
   })
 
   const handleModelChange = (modelId: ModelId) => {
@@ -33,6 +41,7 @@ function App() {
     if (!feature) return
     setActiveFeatureId(featureId)
     setSelectedImageId(feature.image.id)
+    setIsGuideMenuOpen(false)
   }
 
   return (
@@ -42,23 +51,31 @@ function App() {
           <span className="brand-mark">N</span>
           <span>NEVO GUIDE</span>
         </a>
-        <nav className="model-tabs" aria-label="Nevo models">
-          {models.map((model) => (
-            <button
-              key={model.id}
-              type="button"
-              className={`model-tab ${model.id === activeModelId ? 'is-active' : ''}`}
-              disabled={model.status === 'future'}
-              onClick={() => handleModelChange(model.id)}
-            >
-              {model.code}
-            </button>
-          ))}
-        </nav>
+        <label className="model-select" aria-label="เลือกรุ่นรถ">
+          <span>รุ่นรถ</span>
+          <select value={activeModelId} onChange={(event) => handleModelChange(event.target.value as ModelId)}>
+            {models.map((model) => (
+              <option key={model.id} value={model.id} disabled={model.status === 'future'}>
+                {model.name}{model.status === 'future' ? ' (เร็วๆ นี้)' : ''}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={16} />
+        </label>
         <label className="search-box" aria-label="ค้นหารูปภาพ">
           <Search size={16} />
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาภาพ, สี, ฟังก์ชัน..." />
         </label>
+        <button
+          type="button"
+          className="guide-menu-toggle"
+          aria-expanded={isGuideMenuOpen}
+          aria-controls="guide-sidebar"
+          onClick={() => setIsGuideMenuOpen((isOpen) => !isOpen)}
+        >
+          {isGuideMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          <span>เมนูคู่มือ</span>
+        </button>
       </header>
 
       <section className="hero-grid" id="top">
@@ -117,14 +134,22 @@ function App() {
       </section>
 
       <section className="guide-layout" id="visual-guide">
-        <aside className="category-rail">
+        <aside className={`category-rail ${isGuideMenuOpen ? 'is-open' : ''}`} id="guide-sidebar">
           <div className="section-heading">
-            <SlidersHorizontal size={18} />
-            <h2>เลือกหัวข้อ</h2>
+            <span className="section-icon"><SlidersHorizontal size={18} /></span>
+            <span>
+              <small>{activeModel.code} guide</small>
+              <h2>เมนูคู่มือ</h2>
+            </span>
+          </div>
+          <div className="rail-meta">
+            <span>{activeModel.features.length} หมวด</span>
+            <span>{activeModel.screenCaptures.length} ภาพเมนู</span>
           </div>
           <div className="category-list">
             {activeModel.features.map((feature) => {
               const Icon = feature.icon
+              const captureCount = activeModel.screenCaptures.filter((capture) => capture.featureId === feature.id).length
               return (
                 <button
                   key={feature.id}
@@ -137,6 +162,7 @@ function App() {
                     <strong>{feature.label}</strong>
                     <small>{feature.title}</small>
                   </span>
+                  {captureCount ? <em>{captureCount}</em> : null}
                 </button>
               )
             })}
@@ -163,6 +189,13 @@ function App() {
         </section>
 
         <GalleryPanel images={galleryImages} selectedImage={selectedImage} onSelect={setSelectedImageId} />
+
+        <ScreenCapturePanel
+          captures={screenCaptures}
+          activeFeatureLabel={activeFeature.label}
+          selectedImage={selectedImage}
+          onSelect={setSelectedImageId}
+        />
       </section>
     </main>
   )
@@ -188,7 +221,7 @@ function VisualStage({ image, activeFeatureId, onFeatureChange }: VisualStagePro
       {image ? <img className="stage-image" src={image.src} alt={image.alt} /> : null}
       <div className="stage-caption">
         <strong>{image?.title}</strong>
-        <span>ภาพตลาดไทยจาก CHANGAN Thailand</span>
+        <span>{image?.kind === 'capture' ? 'ภาพนิ่งจากคลิปคู่มือที่คัดแยกไว้' : 'ภาพตลาดไทยจาก CHANGAN Thailand'}</span>
       </div>
       {hotspots.map((hotspot) => (
         <button
@@ -210,6 +243,47 @@ type GalleryPanelProps = {
   images: ImageAsset[]
   selectedImage?: ImageAsset
   onSelect: (id: string) => void
+}
+
+type ScreenCapturePanelProps = {
+  captures: ScreenCapture[]
+  activeFeatureLabel: string
+  selectedImage?: ImageAsset
+  onSelect: (id: string) => void
+}
+
+function ScreenCapturePanel({ captures, activeFeatureLabel, selectedImage, onSelect }: ScreenCapturePanelProps) {
+  return (
+    <section className="screen-panel">
+      <div className="playlist-head">
+        <h2>
+          <MonitorPlay size={19} />
+          ภาพเมนูจากคลิป
+        </h2>
+        <span>{captures.length} ภาพ / {activeFeatureLabel}</span>
+      </div>
+      {captures.length ? (
+        <div className="capture-grid">
+          {captures.map((capture) => (
+            <button
+              key={capture.id}
+              type="button"
+              className={`capture-card ${selectedImage?.id === capture.id ? 'is-active' : ''}`}
+              onClick={() => onSelect(capture.id)}
+            >
+              <img src={capture.src} alt={capture.alt} loading="lazy" />
+              <span>
+                <strong>{capture.title}</strong>
+                <small>{capture.note}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="empty-captures">ยังไม่มีภาพเมนูสำหรับหัวข้อนี้ หรือคำค้นหาไม่ตรงกับรายการที่แคปไว้</p>
+      )}
+    </section>
+  )
 }
 
 function GalleryPanel({ images, selectedImage, onSelect }: GalleryPanelProps) {

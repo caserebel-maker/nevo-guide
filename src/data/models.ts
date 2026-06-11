@@ -29,7 +29,14 @@ export type ImageAsset = {
   src: string
   alt: string
   title: string
-  kind: 'hero' | 'color' | 'gallery'
+  kind: 'hero' | 'color' | 'gallery' | 'capture'
+}
+
+export type ScreenCapture = ImageAsset & {
+  kind: 'capture'
+  featureId: FeatureId
+  sourceVideo: string
+  note: string
 }
 
 export type FeatureSection = {
@@ -54,6 +61,7 @@ export type VehicleModel = {
   sourceUrl: string
   specs: Array<{ label: string; value: string }>
   images: ImageAsset[]
+  screenCaptures: ScreenCapture[]
   colors: Array<{ label: string; thai: string; swatch: string; image: ImageAsset }>
   features: FeatureSection[]
 }
@@ -64,6 +72,24 @@ const image = (id: string, path: string, title: string, kind: ImageAsset['kind']
   alt: `CHANGAN NEVO Q05 Thailand - ${title}`,
   title,
   kind,
+})
+
+const capture = (
+  id: string,
+  fileName: string,
+  title: string,
+  featureId: FeatureId,
+  sourceVideo: string,
+  note: string,
+): ScreenCapture => ({
+  id,
+  src: `/media/q05/screen-captures/${fileName}`,
+  alt: `NEVO Q05 screen capture - ${title}`,
+  title,
+  kind: 'capture',
+  featureId,
+  sourceVideo,
+  note,
 })
 
 const q05Hero = image('q05-hero', '/images/nevo/q05/kv/kv-q05-pc.jpg?v2', 'NEVO Q05 official Thailand hero', 'hero')
@@ -91,6 +117,27 @@ const colorImages = {
   gray: image('color-gray', '/images/nevo/q05/car/gray.jpg', 'Starlight Gray', 'color'),
 }
 
+const q05ScreenCaptures: ScreenCapture[] = [
+  capture('capture-home-screen-01', 'home-screen-01.jpg', 'หน้าจอหลัก', 'screen', '18_主屏幕功能讲解', 'ภาพรวมเมนูหลักและแถบควบคุมล่าง'),
+  capture('capture-home-screen-02', 'home-screen-02.jpg', 'เมนูแอปและทางลัด', 'screen', '18_主屏幕功能讲解', 'ตัวอย่างการกดเมนูจากหน้าจอหลัก'),
+  capture('capture-screen-clean-01', 'screen-clean-01.jpg', 'โหมดทำความสะอาดหน้าจอ', 'screen', '09_屏幕清洁模式', 'ตัวอย่างฟังก์ชันล็อกจอเพื่อเช็ดหน้าจอ'),
+  capture('capture-phone-connect-01', 'phone-connect-01.jpg', 'เชื่อมต่อมือถือ', 'screen', '20_网络功能及手机互联', 'ภาพเมนูเชื่อมต่อโทรศัพท์และเครือข่าย'),
+  capture('capture-media-01', 'media-01.jpg', 'ระบบสื่อบันเทิง', 'screen', '21_影音播放娱乐系统', 'ภาพหน้าจอระบบเพลง/ความบันเทิง'),
+  capture('capture-voice-01', 'voice-01.jpg', 'ผู้ช่วยเสียง', 'screen', '22_智能语音', 'ตัวอย่างหน้าจอคำสั่งเสียง'),
+  capture('capture-navigation-01', 'navigation-01.jpg', 'ระบบนำทาง', 'screen', '23_导航系统', 'ภาพแผนที่และเส้นทางนำทาง'),
+  capture('capture-ota-01', 'ota-01.jpg', 'OTA upgrade', 'screen', '29_OTA升级', 'พื้นที่สำหรับอัปเดตซอฟต์แวร์'),
+  capture('capture-cluster-02', 'cluster-02.jpg', 'ข้อมูลพลังงานบนหน้าจอ', 'screen', '16_仪表显示及功能', 'ตัวอย่างกราฟ/ข้อมูลที่แสดงบนหน้าจอกลาง'),
+  capture('capture-drive-mode-01', 'drive-mode-01.jpg', 'โหมดขับขี่', 'drive', '05_驾驶模式', 'ตัวอย่างการเลือกโหมดขับขี่'),
+  capture('capture-transparent-chassis-01', 'transparent-chassis-01.jpg', 'มุมมองใต้ท้องรถ', 'drive', '06_底盘透视', 'ภาพช่วยมองสภาพพื้นหรือสิ่งกีดขวาง'),
+  capture('capture-camera-360-01', 'camera-360-01.jpg', 'กล้องรอบคัน 360', 'drive', '28_360环影', 'ตัวอย่างมุมกล้องและภาพ top view'),
+  capture('capture-parking-01', 'parking-01.jpg', 'ช่วยจอด', 'drive', '25_辅助泊车与智能泊车', 'ภาพฟังก์ชันช่วยจอด/จอดอัจฉริยะ'),
+  capture('capture-adas-01', 'adas-01.jpg', 'ระบบช่วยขับ', 'safety', '27_智能驾驶', 'ตัวอย่างเมนูช่วยขับที่ต้องตรวจสอบกับรุ่นไทยอีกครั้ง'),
+  capture('capture-sentry-01', 'sentry-01.jpg', 'Sentry mode', 'safety', '31_哨兵模式', 'ฟังก์ชันจากคลิปจีน เก็บไว้เป็น reference และต้องเทียบกับรุ่นไทย'),
+  capture('capture-scene-mode-01', 'scene-mode-01.jpg', 'Scene mode', 'comfort', '26_场景模式', 'ตัวอย่างโหมดสถานการณ์ในรถ'),
+  capture('capture-ambient-light-01', 'ambient-light-01.jpg', 'ไฟ ambient', 'comfort', '19_氛围灯控制与效果', 'ตัวอย่างการตั้งค่าไฟบรรยากาศ'),
+  capture('capture-charging-v2l-01', 'charging-v2l-01.jpg', 'ชาร์จและจ่ายไฟ', 'charging', '13_补能_放电', 'ภาพเมนูชาร์จและการจ่ายไฟภายนอก'),
+]
+
 const q05Features: FeatureSection[] = [
   {
     id: 'overview',
@@ -107,8 +154,8 @@ const q05Features: FeatureSection[] = [
     title: 'หน้าจอและการเชื่อมต่อ',
     summary: 'จุดรวมข้อมูลสำหรับการใช้งานหน้าจอกลาง แผงหน้าปัด การเชื่อมต่อมือถือ และ OTA',
     icon: MonitorCog,
-    image: q05Gallery[3],
-    facts: ['หน้าจอกลาง 14.6 นิ้ว', 'จอผู้ขับ 10.17 นิ้ว', 'รองรับ Apple CarPlay / Android Auto / OTA'],
+    image: q05ScreenCaptures[0],
+    facts: ['หน้าจอกลาง 14.6 นิ้ว', 'จอผู้ขับ 10.17 นิ้ว', 'มีภาพแคปจากคลิปสำหรับดูตำแหน่งเมนูจริง'],
   },
   {
     id: 'drive',
@@ -116,7 +163,7 @@ const q05Features: FeatureSection[] = [
     title: 'ระบบขับขี่และมุมมองรอบคัน',
     summary: 'รวมภาพและข้อมูลที่ช่วยให้เข้าใจตัวรถก่อนใช้งานจริง เช่น มุมมองตัวรถ ระบบช่วยขับ และการควบคุมหลัก',
     icon: CircleGauge,
-    image: q05Gallery[7],
+    image: q05ScreenCaptures[11],
     facts: ['กำลังสูงสุด 163 PS', 'แบตเตอรี่จาก CATL ตามข่าวเปิดตัวไทย', 'แพลตฟอร์ม EV สำหรับตลาดโลก'],
   },
   {
@@ -125,7 +172,7 @@ const q05Features: FeatureSection[] = [
     title: 'พื้นที่โดยสารและความสบาย',
     summary: 'ดูภาพภายใน เบาะ พื้นที่เก็บของ และรายละเอียดการใช้งานที่สำคัญกับชีวิตประจำวัน',
     icon: Sofa,
-    image: q05Gallery[4],
+    image: q05ScreenCaptures[16],
     facts: ['พื้นผิวภายในแบบ soft-touch มากกว่า 80% ตามข้อมูลข่าวไทย', 'พื้นที่เก็บสัมภาระขยายได้สูงสุด 1,380 ลิตร', 'มีช่องเก็บใต้พื้น 90 ลิตร'],
   },
   {
@@ -134,7 +181,7 @@ const q05Features: FeatureSection[] = [
     title: 'ระบบช่วยเหลือและความปลอดภัย',
     summary: 'พื้นที่สำหรับรวมคำอธิบายระบบเตือนและระบบช่วยเหลือผู้ขับ โดยเลือกเฉพาะฟังก์ชันที่ใช้ในรุ่นไทย',
     icon: ShieldCheck,
-    image: q05Gallery[8],
+    image: q05ScreenCaptures[13],
     facts: ['รองรับระบบช่วยขับตามรุ่นย่อย', 'เน้นข้อมูลไทยก่อน ไม่อ้างฟังก์ชันจีนที่อาจต่างกัน', 'เตรียมพื้นที่สำหรับคู่มือเจ้าของรถฉบับไทย'],
   },
   {
@@ -143,7 +190,7 @@ const q05Features: FeatureSection[] = [
     title: 'การชาร์จและพลังงาน',
     summary: 'ข้อมูลชาร์จที่ใช้บ่อย เช่น กำลังชาร์จ DC และเวลาชาร์จตามสเปก official Thailand',
     icon: BatteryCharging,
-    image: q05Gallery[5],
+    image: q05ScreenCaptures[17],
     facts: ['รองรับ DC สูงสุด 162 kW', 'ชาร์จ DC 30-80% ประมาณ 15 นาที', 'ระยะทางวิ่งไฟฟ้า NEDC 462 km'],
   },
   {
@@ -187,6 +234,7 @@ export const models: VehicleModel[] = [
       { label: 'ฐานล้อ', value: '2,735 mm' },
     ],
     images: [q05Hero, ...Object.values(colorImages), ...q05Gallery],
+    screenCaptures: q05ScreenCaptures,
     colors: [
       { label: 'Aurora Pink', thai: 'สีชมพู', swatch: '#ead0d6', image: colorImages.pink },
       { label: 'Deep Space Black', thai: 'สีดำ', swatch: '#111216', image: colorImages.black },
@@ -208,6 +256,7 @@ export const models: VehicleModel[] = [
     sourceUrl: '',
     specs: [],
     images: [],
+    screenCaptures: [],
     colors: [],
     features: [],
   },
@@ -223,6 +272,7 @@ export const models: VehicleModel[] = [
     sourceUrl: '',
     specs: [],
     images: [],
+    screenCaptures: [],
     colors: [],
     features: [],
   },
@@ -238,6 +288,7 @@ export const models: VehicleModel[] = [
     sourceUrl: '',
     specs: [],
     images: [],
+    screenCaptures: [],
     colors: [],
     features: [],
   },
