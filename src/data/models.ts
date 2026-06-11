@@ -146,7 +146,7 @@ const q05Features: FeatureSection[] = [
     summary: 'สรุปรุ่นไทยแบบดูง่าย เน้นข้อมูลที่คนใช้รถต้องเปิดดูบ่อยและภาพจริงจากหน้า CHANGAN Thailand',
     icon: Images,
     image: q05Hero,
-    facts: ['ราคาเริ่มต้น 629,900 THB', 'กำลังสูงสุด 163 PS', 'ระยะทางไฟฟ้า NEDC 462 km'],
+    facts: ['รุ่นย่อยในไทย: MAX / ULTRA', 'กำลังสูงสุด 163 PS', 'ระยะทางไฟฟ้า NEDC 462 km'],
   },
   {
     id: 'screen',
@@ -226,7 +226,6 @@ export const models: VehicleModel[] = [
       'ฐานข้อมูลภาพและข้อมูลสำหรับ NEVO Q05 รุ่นที่ขายในไทย ใช้ภาพ official Thailand เป็นหลักเพื่อเลี่ยงข้อมูล/หน้าตารถจากประเทศอื่นที่ไม่ตรงรุ่น',
     sourceUrl: 'https://www.changan.co.th/th/nevo-q05/',
     specs: [
-      { label: 'ราคาเริ่มต้น', value: '629,900 THB' },
       { label: 'กำลังสูงสุด', value: '163 PS' },
       { label: 'ระยะทางไฟฟ้า', value: '462 km NEDC' },
       { label: 'DC สูงสุด', value: '162 kW' },
@@ -293,3 +292,92 @@ export const models: VehicleModel[] = [
     features: [],
   },
 ]
+
+export type HubItemType = 'tip' | 'issue'
+
+export type HubItemCategory = FeatureId
+
+export type HubItem = {
+  id: string
+  type: HubItemType
+  category: HubItemCategory
+  title: string
+  description: string
+  solution?: string
+  upvotes: number
+  author: string
+  date: string
+  image?: string // Base64 data URL or external image path
+}
+
+export const initialHubItems: HubItem[] = [
+  {
+    id: 'hub-01',
+    type: 'tip',
+    category: 'drive',
+    title: 'วิธีเปิดโหมด iEM (Intelligent Energy Management)',
+    description: 'ระบบการขับเคลื่อนอัจฉริยะ iEM จะช่วยคำนวณการทำงานระหว่างมอเตอร์ไฟฟ้าและเครื่องยนต์ปั่นไฟโดยอัตโนมัติ เพื่อการประหยัดพลังงานสูงสุดในทุกทริปการเดินทาง เหมาะมากกับการขับขี่เดินทางไกลข้ามจังหวัด',
+    upvotes: 42,
+    author: 'Nevo Expert',
+    date: '2026-06-01',
+  },
+  {
+    id: 'hub-02',
+    type: 'issue',
+    category: 'screen',
+    title: 'การเชื่อมต่อ Apple CarPlay หลุดหรือค้างบางครั้ง',
+    description: 'ในบางครั้ง หน้าจอกลางขนาด 14.6 นิ้ว อาจตัดการทำงานจาก Apple CarPlay หรือค้างโดยไม่ทราบสาเหตุ หรือมีอาการหน่วงหลังจากเชื่อมต่อเป็นเวลานาน',
+    solution: 'สามารถแก้ไขด้วยการรีสตาร์ทระบบอินโฟเทนเมนต์ด่วน โดยการกดปุ่มลดเสียง/เปิดเสียง (Volume Control) บนคอนโซลกลางค้างไว้ประมาณ 10-15 วินาทีจนกว่าหน้าจอหลักจะดับไปและขึ้นโลโก้ Changan ใหม่',
+    upvotes: 28,
+    author: 'Changan Tech',
+    date: '2026-06-02',
+    image: 'https://www.changan.co.th/images/nevo/q05/gallery/pic-004.jpg',
+  },
+  {
+    id: 'hub-03',
+    type: 'tip',
+    category: 'safety',
+    title: 'วิธีเปิดกล้องมองใต้ท้องรถ (Transparent Chassis) แบบ 540 องศา',
+    description: 'ฟังก์ชันกล้องมองรอบทิศทาง 540 องศา สามารถจำลองมุมมองใต้ท้องรถแบบโปร่งแสงเพื่อหลีกเลี่ยงสิ่งกีดขวางหรือหินคมๆ ขณะจอดรถหรือขับบนทางขรุขระ',
+    solution: 'เปิดใช้งานโดยกดปุ่มเปิดกล้องรอบคันบนพวงมาลัย หรือกดไอคอนกล้องที่จอกลาง จากนั้นเลือกโหมดภาพ "3D" หรือตัวเลือก "ใต้ท้องรถ (Chassis)" เพื่อให้ระบบสร้างภาพใต้ท้องรถแบบเรียลไทม์',
+    upvotes: 35,
+    author: 'Nevo Driver',
+    date: '2026-06-03',
+    image: 'https://www.changan.co.th/images/nevo/q05/gallery/pic-008.jpg',
+  },
+  {
+    id: 'hub-04',
+    type: 'issue',
+    category: 'screen',
+    title: 'หาระยะทางสะสมทั้งหมด (Odometer) บนจอมาตรวัดไม่เจอ',
+    description: 'หน้าจอผู้ขับขี่ขนาด 10.17 นิ้ว จะไม่แสดงเลขระยะทางสะสมรวม (Odo) ตลอดเวลา ทำให้ผู้ใช้ใหม่หาค่านี้ไม่เจอและแจ้งเป็นปัญหาบ่อยครั้ง',
+    solution: 'เลขระยะทางสะสม (Odo) จะแสดงโดยอัตโนมัติเมื่อระบบตรวจจับว่ากำลังสรุปการเดินทาง (Trip Summary) ตอนดับเครื่องยนต์ หรือสามารถกดดูที่หน้าจอกลางได้ที่เมนู ตั้งค่ารถยนต์ (Car Setting) > ข้อมูลรถยนต์ (Vehicle Info)',
+    upvotes: 19,
+    author: 'Nevo Owner',
+    date: '2026-06-04',
+  },
+  {
+    id: 'hub-05',
+    type: 'issue',
+    category: 'comfort',
+    title: 'แถบปุ่มกดสัมผัส (Capacitive) ใต้หน้าจอกลางทำงานไวเกินไป',
+    description: 'ขณะเอื้อมมือกดจอกลาง ปลายนิ้วหรืออุ้งมือมักจะเผลอไปเฉียดโดนปุ่มระบบสัมผัส Capacitive ด้านล่างจอ ทำให้พัดลมแอร์หรือระดับเสียงปรับเปลี่ยนโดยไม่ตั้งใจ',
+    solution: 'ปรับท่านั่งและแนะนำให้เอื้อมมือโดยประคองนิ้วโป้งไว้ที่ฐานล่าง หรือใช้นิ้วชี้กดจอกลางโดยให้สันมือลอยพ้นแนวปุ่มด้านล่าง นอกจากนี้สามารถปรับระดับการตอบสนองความเร็วปุ่มสัมผัส (Touch Feedback) ได้ในหน้าตั้งค่าทั่วไปของจอกลาง',
+    upvotes: 15,
+    author: 'Adisorn K.',
+    date: '2026-06-05',
+  },
+  {
+    id: 'hub-06',
+    type: 'tip',
+    category: 'charging',
+    title: 'ตั้งเวลาชาร์จล่วงหน้าช่วง Off-Peak (22:00 - 09:00) เพื่อประหยัดค่าไฟ TOU',
+    description: 'การชาร์จรถยนต์ไฟฟ้าที่บ้านช่วงเวลา Off-peak (TOU) จะประหยัดค่าใช้จ่ายได้มากกว่าครึ่งหนึ่งของราคาไฟปกติ สามารถตั้งเวลาล่วงหน้าให้ชาร์จเฉพาะช่วงเวลานี้ได้สะดวกรวดเร็ว',
+    solution: 'เสียบปืนชาร์จเข้ากับตัวรถ จากนั้นไปที่เมนูระบบชาร์จในหน้าจอกลาง เลือกหัวข้อ พลังงาน (Energy Management) > เปิดใช้งานตั้งเวลาชาร์จล่วงหน้า (Charging Timer) จากนั้นเลือกตั้งเวลาเริ่มต้นที่ 22:00 น. หรือช่วงเวลาอื่นตามต้องการ ระบบจะหยุดชาร์จและเริ่มต้นดึงไฟตามเวลาที่ระบุโดยอัตโนมัติ',
+    upvotes: 56,
+    author: 'TOU User',
+    date: '2026-06-06',
+    image: 'https://www.changan.co.th/images/nevo/q05/gallery/pic-006.jpg',
+  },
+]
+
