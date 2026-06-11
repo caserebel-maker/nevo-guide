@@ -1,7 +1,29 @@
-import { useState } from 'react'
-import { ArrowUpRight, Check, Images, Search, SlidersHorizontal } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import {
+  Check,
+  Images,
+  Search,
+  SlidersHorizontal,
+  ThumbsUp,
+  Plus,
+  AlertTriangle,
+  Sparkles,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  Info,
+} from 'lucide-react'
 import './App.css'
-import { models, type FeatureId, type ImageAsset, type ModelId } from './data/models'
+import {
+  models,
+  initialHubItems,
+  type FeatureId,
+  type ImageAsset,
+  type ModelId,
+  type HubItem,
+  type HubItemType,
+} from './data/models'
 
 function App() {
   const [activeModelId, setActiveModelId] = useState<ModelId>('q05')
@@ -9,10 +31,53 @@ function App() {
   const [selectedImageId, setSelectedImageId] = useState('q05-hero')
   const [query, setQuery] = useState('')
 
+  // Hub States
+  const [hubItems, setHubItems] = useState<HubItem[]>([])
+  const [votedIds, setVotedIds] = useState<string[]>([])
+  const [hubSearch, setHubSearch] = useState('')
+  const [hubTypeFilter, setHubTypeFilter] = useState<'all' | 'tip' | 'issue'>('all')
+  const [hubCatFilter, setHubCatFilter] = useState<string>('all')
+  
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [openWorkaroundIds, setOpenWorkaroundIds] = useState<string[]>([])
+
+  // Form states
+  const [formType, setFormType] = useState<HubItemType>('tip')
+  const [formCategory, setFormCategory] = useState<FeatureId>('screen')
+  const [formTitle, setFormTitle] = useState('')
+  const [formDescription, setFormDescription] = useState('')
+  const [formSolution, setFormSolution] = useState('')
+  const [formAuthor, setFormAuthor] = useState('')
+  const [formError, setFormError] = useState('')
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
+
+  // Load from local storage on mount
+  useEffect(() => {
+    const savedItems = localStorage.getItem('nevo_q05_hub_items')
+    if (savedItems) {
+      try {
+        setHubItems(JSON.parse(savedItems))
+      } catch (e) {
+        setHubItems(initialHubItems)
+      }
+    } else {
+      setHubItems(initialHubItems)
+      localStorage.setItem('nevo_q05_hub_items', JSON.stringify(initialHubItems))
+    }
+
+    const savedVoted = localStorage.getItem('nevo_q05_voted_ids')
+    if (savedVoted) {
+      try {
+        setVotedIds(JSON.parse(savedVoted))
+      } catch (e) {}
+    }
+  }, [])
+
   const activeModel = models.find((model) => model.id === activeModelId) ?? models[0]
   const activeFeature = activeModel.features.find((feature) => feature.id === activeFeatureId) ?? activeModel.features[0]
   const selectedImage =
     activeModel.images.find((image) => image.id === selectedImageId) ?? activeFeature?.image ?? activeModel.images[0]
+  
   const normalizedQuery = query.trim().toLocaleLowerCase()
   const galleryImages = activeModel.images.filter((image) => {
     if (image.kind === 'hero') return false
@@ -22,6 +87,7 @@ function App() {
 
   const handleModelChange = (modelId: ModelId) => {
     const nextModel = models.find((model) => model.id === modelId)
+    // Keep other models disabled since they are not launched yet
     if (!nextModel || nextModel.status === 'future') return
     setActiveModelId(modelId)
     setActiveFeatureId('overview')
@@ -35,12 +101,115 @@ function App() {
     setSelectedImageId(feature.image.id)
   }
 
+  const handleVote = (id: string) => {
+    let nextVoted = [...votedIds]
+    let increment = 1
+    
+    if (votedIds.includes(id)) {
+      nextVoted = votedIds.filter(v => v !== id)
+      increment = -1
+    } else {
+      nextVoted.push(id)
+    }
+    
+    setVotedIds(nextVoted)
+    localStorage.setItem('nevo_q05_voted_ids', JSON.stringify(nextVoted))
+
+    const nextItems = hubItems.map(item => {
+      if (item.id === id) {
+        return { ...item, upvotes: Math.max(0, item.upvotes + increment) }
+      }
+      return item
+    })
+    setHubItems(nextItems)
+    localStorage.setItem('nevo_q05_hub_items', JSON.stringify(nextItems))
+  }
+
+  const toggleWorkaround = (id: string) => {
+    if (openWorkaroundIds.includes(id)) {
+      setOpenWorkaroundIds(openWorkaroundIds.filter(x => x !== id))
+    } else {
+      setOpenWorkaroundIds([...openWorkaroundIds, id])
+    }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formTitle.trim() || !formDescription.trim()) {
+      setFormError('กรุณากรอกหัวข้อและรายละเอียดให้ครบถ้วน')
+      return
+    }
+
+    const newItem: HubItem = {
+      id: 'hub-user-' + Date.now(),
+      type: formType,
+      category: formCategory,
+      title: formTitle.trim(),
+      description: formDescription.trim(),
+      solution: formType === 'issue' ? (formSolution.trim() || undefined) : undefined,
+      upvotes: 0,
+      author: formAuthor.trim() || 'ผู้ใช้ทั่วไป',
+      date: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
+    }
+
+    const nextItems = [newItem, ...hubItems]
+    setHubItems(nextItems)
+    localStorage.setItem('nevo_q05_hub_items', JSON.stringify(nextItems))
+
+    // Reset Form
+    setFormTitle('')
+    setFormDescription('')
+    setFormSolution('')
+    setFormAuthor('')
+    setFormError('')
+    setIsModalOpen(false)
+    
+    // Toast notification
+    setShowSuccessToast(true)
+    setTimeout(() => setShowSuccessToast(false), 3000)
+  }
+
+  const categoryLabels: Record<FeatureId, string> = {
+    overview: 'ภาพรวม',
+    screen: 'หน้าจอ',
+    drive: 'การขับขี่',
+    comfort: 'ห้องโดยสาร',
+    safety: 'ความปลอดภัย',
+    charging: 'การชาร์จ',
+    exterior: 'ภายนอก',
+    care: 'ดูแลรักษา',
+  }
+
+  const filteredHubItems = hubItems.filter(item => {
+    if (hubTypeFilter !== 'all' && item.type !== hubTypeFilter) return false
+    if (hubCatFilter !== 'all' && item.category !== hubCatFilter) return false
+
+    if (hubSearch.trim()) {
+      const q = hubSearch.toLowerCase()
+      const titleMatch = item.title.toLowerCase().includes(q)
+      const descMatch = item.description.toLowerCase().includes(q)
+      const solMatch = item.solution?.toLowerCase().includes(q) ?? false
+      const authorMatch = item.author.toLowerCase().includes(q)
+      return titleMatch || descMatch || solMatch || authorMatch
+    }
+
+    return true
+  })
+
   return (
     <main className="app-shell">
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="toast-notification" role="alert">
+          <Sparkles size={16} />
+          <span>บันทึกข้อมูลเรียบร้อยแล้ว! ขอบคุณที่ร่วมแบ่งปัน</span>
+        </div>
+      )}
+
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Nevo Guide home">
           <span className="brand-mark">N</span>
-          <span>NEVO GUIDE</span>
+          <span>NEVO Q05 GUIDE</span>
         </a>
         <nav className="model-tabs" aria-label="Nevo models">
           {models.map((model) => (
@@ -50,8 +219,10 @@ function App() {
               className={`model-tab ${model.id === activeModelId ? 'is-active' : ''}`}
               disabled={model.status === 'future'}
               onClick={() => handleModelChange(model.id)}
+              title={model.status === 'future' ? `${model.name} (เตรียมรองรับในอนาคต)` : undefined}
             >
               {model.code}
+              {model.status === 'future' && <span className="tab-badge">Soon</span>}
             </button>
           ))}
         </nav>
@@ -64,16 +235,18 @@ function App() {
       <section className="hero-grid" id="top">
         <div className="hero-copy">
           <p className="model-line">{activeModel.name} / {activeModel.market}</p>
-          <h1>ฐานข้อมูลภาพสำหรับ NEVO Q05 รุ่นไทย</h1>
-          <p className="hero-summary">{activeModel.summary}</p>
+          <h1>คู่มือออนไลน์และคลังข้อมูลคนใช้รถ</h1>
+          <p className="hero-summary">
+            แหล่งรวบรวมข้อมูลอย่างเป็นทางการสำหรับผู้ใช้ NEVO Q05 พร้อมทิปเทคนิคพิเศษ แนะนำวิธีการใช้งาน และสรุปรายงานปัญหาที่พบจากผู้ใช้จริง
+          </p>
           <div className="hero-actions">
             <a className="primary-action" href="#visual-guide">
               <Images size={16} />
               ดูภาพและฟังก์ชัน
             </a>
-            <a className="ghost-action" href={activeModel.sourceUrl} target="_blank" rel="noreferrer">
-              Official Thailand
-              <ArrowUpRight size={15} />
+            <a className="ghost-action" href="#hub-section">
+              <Lightbulb size={16} />
+              ทริค & ปัญหาที่พบ
             </a>
           </div>
         </div>
@@ -164,6 +337,278 @@ function App() {
 
         <GalleryPanel images={galleryImages} selectedImage={selectedImage} onSelect={setSelectedImageId} />
       </section>
+
+      {/* Hub Section */}
+      <section className="hub-section" id="hub-section">
+        <div className="hub-header">
+          <div className="hub-title-block">
+            <p className="model-line">NEVO Q05 Owner & Tech Hub</p>
+            <h2>คลังทิปการใช้งานและปัญหาที่พบ</h2>
+            <p className="hub-desc">
+              ร่วมแชร์และศึกษาเทคนิคการตั้งค่าตัวรถ แนะนำวิธีการแก้ไขปัญหาเบื้องต้นจากข้อมูลผู้ใช้รถและทีมช่างเทคนิค Changan
+            </p>
+          </div>
+          <button type="button" className="add-post-btn" onClick={() => setIsModalOpen(true)}>
+            <Plus size={16} />
+            แชร์ทิป / แจ้งปัญหาใหม่
+          </button>
+        </div>
+
+        <div className="hub-controls">
+          <div className="hub-filters">
+            <button
+              type="button"
+              className={`filter-btn ${hubTypeFilter === 'all' ? 'is-active' : ''}`}
+              onClick={() => setHubTypeFilter('all')}
+            >
+              ทั้งหมด
+            </button>
+            <button
+              type="button"
+              className={`filter-btn type-tip ${hubTypeFilter === 'tip' ? 'is-active' : ''}`}
+              onClick={() => setHubTypeFilter('tip')}
+            >
+              <Lightbulb size={14} />
+              ทริคแนะนำ
+            </button>
+            <button
+              type="button"
+              className={`filter-btn type-issue ${hubTypeFilter === 'issue' ? 'is-active' : ''}`}
+              onClick={() => setHubTypeFilter('issue')}
+            >
+              <AlertTriangle size={14} />
+              ปัญหาที่พบ
+            </button>
+          </div>
+
+          <div className="hub-search-row">
+            <label className="hub-cat-select" aria-label="กรองตามหมวดหมู่">
+              <select value={hubCatFilter} onChange={(e) => setHubCatFilter(e.target.value)}>
+                <option value="all">ทุกหมวดหมู่</option>
+                {Object.entries(categoryLabels).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="hub-search-box">
+              <Search size={16} />
+              <input
+                type="text"
+                placeholder="ค้นหาทิปหรือรายงานปัญหา..."
+                value={hubSearch}
+                onChange={(e) => setHubSearch(e.target.value)}
+              />
+              {hubSearch && (
+                <button type="button" className="clear-search" onClick={() => setHubSearch('')}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="hub-grid">
+          {filteredHubItems.length > 0 ? (
+            filteredHubItems.map((item) => {
+              const isVoted = votedIds.includes(item.id)
+              const isWorkaroundOpen = openWorkaroundIds.includes(item.id)
+              return (
+                <article key={item.id} className={`hub-card type-${item.type}`}>
+                  <header className="hub-card-header">
+                    <span className={`badge-type ${item.type}`}>
+                      {item.type === 'tip' ? <Lightbulb size={12} /> : <AlertTriangle size={12} />}
+                      {item.type === 'tip' ? 'ทริคแนะนำ' : 'ปัญหาที่พบ'}
+                    </span>
+                    <span className="badge-cat">
+                      {categoryLabels[item.category] || item.category}
+                    </span>
+                  </header>
+                  
+                  <h3 className="hub-card-title">{item.title}</h3>
+                  <p className="hub-card-desc">{item.description}</p>
+
+                  {item.solution && (
+                    <div className="workaround-section">
+                      <button
+                        type="button"
+                        className={`workaround-toggle-btn ${isWorkaroundOpen ? 'is-open' : ''}`}
+                        onClick={() => toggleWorkaround(item.id)}
+                      >
+                        <span>แนวทางแก้ไข / วิธีแก้เบื้องต้น</span>
+                        {isWorkaroundOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </button>
+                      
+                      {isWorkaroundOpen && (
+                        <div className="workaround-content animate-fade-slide">
+                          <p>{item.solution}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <footer className="hub-card-footer">
+                    <div className="hub-card-meta">
+                      <span className="meta-author">โดย: {item.author}</span>
+                      <span className="meta-date">{item.date}</span>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      className={`vote-btn ${isVoted ? 'is-voted' : ''}`}
+                      onClick={() => handleVote(item.id)}
+                      title={isVoted ? 'โหวตแล้ว' : 'คิดว่ามีประโยชน์'}
+                    >
+                      <ThumbsUp size={13} />
+                      <span>{item.upvotes} {isVoted ? 'ขอบคุณ' : 'มีประโยชน์'}</span>
+                    </button>
+                  </footer>
+                </article>
+              )
+            })
+          ) : (
+            <div className="hub-empty-state">
+              <Info size={40} className="empty-icon" />
+              <h3>ไม่พบข้อมูลทิปหรือรายงานปัญหา</h3>
+              <p>ลองค้นหาด้วยคำอื่น หรือกดปุ่ม "แชร์ทิป / แจ้งปัญหาใหม่" ด้านขวาเพื่อโพสต์ข้อมูลแรกในหมวดนี้</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Modal overlays */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <header className="modal-header">
+              <h3>แจ้งปัญหาหรือร่วมแชร์ทิปใหม่</h3>
+              <button type="button" className="close-modal-btn" onClick={() => setIsModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </header>
+            
+            <form onSubmit={handleSubmit} className="modal-form">
+              {formError && (
+                <div className="form-error-msg">
+                  <AlertTriangle size={15} />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              <div className="form-group-row">
+                <div className="form-group">
+                  <span className="form-label">ประเภทรายงาน</span>
+                  <div className="form-radio-group">
+                    <label className={`radio-label ${formType === 'tip' ? 'is-checked' : ''}`}>
+                      <input
+                        type="radio"
+                        name="itemType"
+                        value="tip"
+                        checked={formType === 'tip'}
+                        onChange={() => setFormType('tip')}
+                      />
+                      <Lightbulb size={13} />
+                      ทริคแนะนำ (Tip)
+                    </label>
+                    <label className={`radio-label ${formType === 'issue' ? 'is-checked' : ''}`}>
+                      <input
+                        type="radio"
+                        name="itemType"
+                        value="issue"
+                        checked={formType === 'issue'}
+                        onChange={() => setFormType('issue')}
+                      />
+                      <AlertTriangle size={13} />
+                      ปัญหาที่พบ (Issue)
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="form-category" className="form-label">ระบบที่เกี่ยวข้อง</label>
+                  <select
+                    id="form-category"
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value as FeatureId)}
+                    className="form-select"
+                  >
+                    {Object.entries(categoryLabels).map(([id, label]) => (
+                      <option key={id} value={id}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="form-title" className="form-label">หัวข้อเรื่อง</label>
+                <input
+                  type="text"
+                  id="form-title"
+                  placeholder="เช่น ปัญหาเสียงแอร์ดังขณะจอดชาร์จ, เทคนิคตั้งโหมดเบาะนวด"
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  className="form-input"
+                  maxLength={80}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="form-desc" className="form-label">คำอธิบายรายละเอียด</label>
+                <textarea
+                  id="form-desc"
+                  placeholder="รายละเอียดปัญหาที่พบ หรือเทคนิคที่ต้องการแชร์ให้เพื่อนๆ เจ้าของรถท่านอื่นทราบ"
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  className="form-textarea"
+                  rows={4}
+                  required
+                />
+              </div>
+
+              {formType === 'issue' && (
+                <div className="form-group animate-fade-slide">
+                  <label htmlFor="form-solution" className="form-label">แนวทางแก้ปัญหาเบื้องต้น (ถ้ามี)</label>
+                  <textarea
+                    id="form-solution"
+                    placeholder="เช่น เปิดฟังก์ชันในตั้งค่าแอป Changan Connect หรือกดรีบูตหน้าจอค้างไว้"
+                    value={formSolution}
+                    onChange={(e) => setFormSolution(e.target.value)}
+                    className="form-textarea"
+                    rows={3}
+                  />
+                </div>
+              )}
+
+              <div className="form-group">
+                <label htmlFor="form-author" className="form-label">ชื่อ / นามแฝงผู้โพสต์</label>
+                <input
+                  type="text"
+                  id="form-author"
+                  placeholder="ระบุชื่อของคุณ (หากเว้นว่างไว้ ระบบจะแสดงเป็น 'ผู้ใช้ทั่วไป')"
+                  value={formAuthor}
+                  onChange={(e) => setFormAuthor(e.target.value)}
+                  className="form-input"
+                  maxLength={30}
+                />
+              </div>
+
+              <footer className="form-actions-row">
+                <button type="button" className="cancel-btn" onClick={() => setIsModalOpen(false)}>
+                  ยกเลิก
+                </button>
+                <button type="submit" className="submit-btn">
+                  บันทึกและโพสต์
+                </button>
+              </footer>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
@@ -237,3 +682,4 @@ function GalleryPanel({ images, selectedImage, onSelect }: GalleryPanelProps) {
 }
 
 export default App
+
