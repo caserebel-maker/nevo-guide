@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Check,
-  Images,
   Search,
-  SlidersHorizontal,
   ThumbsUp,
   Plus,
   AlertTriangle,
@@ -13,6 +11,8 @@ import {
   ChevronUp,
   Lightbulb,
   Info,
+  Menu,
+  Images,
 } from 'lucide-react'
 import './App.css'
 import {
@@ -70,6 +70,9 @@ function App() {
   const [selectedImageId, setSelectedImageId] = useState('q05-hero')
   const [query, setQuery] = useState('')
 
+  // Layout States
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
   // Hub States
   const [hubItems, setHubItems] = useState<HubItem[]>([])
   const [votedIds, setVotedIds] = useState<string[]>([])
@@ -90,24 +93,6 @@ function App() {
   const [formImage, setFormImage] = useState('')
   const [formError, setFormError] = useState('')
   const [showSuccessToast, setShowSuccessToast] = useState(false)
-
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    
-    if (!file.type.startsWith('image/')) {
-      setFormError('กรุณาเลือกไฟล์รูปภาพเท่านั้น')
-      return
-    }
-    
-    try {
-      const compressed = await compressImage(file)
-      setFormImage(compressed)
-      setFormError('')
-    } catch (err) {
-      setFormError('เกิดข้อผิดพลาดในการโหลดรูปภาพ')
-    }
-  }
 
   // Load from local storage on mount
   useEffect(() => {
@@ -135,17 +120,9 @@ function App() {
   const activeFeature = activeModel.features.find((feature) => feature.id === activeFeatureId) ?? activeModel.features[0]
   const selectedImage =
     activeModel.images.find((image) => image.id === selectedImageId) ?? activeFeature?.image ?? activeModel.images[0]
-  
-  const normalizedQuery = query.trim().toLocaleLowerCase()
-  const galleryImages = activeModel.images.filter((image) => {
-    if (image.kind === 'hero') return false
-    if (!normalizedQuery) return true
-    return `${image.title} ${image.alt}`.toLocaleLowerCase().includes(normalizedQuery)
-  })
 
   const handleModelChange = (modelId: ModelId) => {
     const nextModel = models.find((model) => model.id === modelId)
-    // Keep other models disabled since they are not launched yet
     if (!nextModel || nextModel.status === 'future') return
     setActiveModelId(modelId)
     setActiveFeatureId('overview')
@@ -157,6 +134,11 @@ function App() {
     if (!feature) return
     setActiveFeatureId(featureId)
     setSelectedImageId(feature.image.id)
+    
+    // Scroll to details on mobile
+    if (window.innerWidth <= 1080) {
+      document.getElementById('manual-detail')?.scrollIntoView({ behavior: 'smooth' })
+    }
   }
 
   const handleVote = (id: string) => {
@@ -188,6 +170,18 @@ function App() {
       setOpenWorkaroundIds(openWorkaroundIds.filter(x => x !== id))
     } else {
       setOpenWorkaroundIds([...openWorkaroundIds, id])
+    }
+  }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const compressed = await compressImage(file)
+      setFormImage(compressed)
+    } catch (err) {
+      console.error(err)
+      setFormError('ไม่สามารถอัปโหลดหรือบีบอัดรูปภาพได้')
     }
   }
 
@@ -257,7 +251,7 @@ function App() {
   })
 
   return (
-    <main className="app-shell">
+    <div className="app-layout-wrapper">
       {/* Success Toast */}
       {showSuccessToast && (
         <div className="toast-notification" role="alert">
@@ -266,285 +260,386 @@ function App() {
         </div>
       )}
 
-      <header className="topbar">
-        <a className="brand" href="#top" aria-label="Nevo Guide home">
+      {/* Desktop Sidebar Navigation */}
+      <aside className="sidebar-navigation">
+        <div className="sidebar-brand">
           <span className="brand-mark">N</span>
-          <span>NEVO Q05 GUIDE</span>
-        </a>
-        <nav className="model-tabs" aria-label="Nevo models">
-          {models.map((model) => (
-            <button
-              key={model.id}
-              type="button"
-              className={`model-tab ${model.id === activeModelId ? 'is-active' : ''}`}
-              disabled={model.status === 'future'}
-              onClick={() => handleModelChange(model.id)}
-              title={model.status === 'future' ? `${model.name} (เตรียมรองรับในอนาคต)` : undefined}
-            >
-              {model.code}
-              {model.status === 'future' && <span className="tab-badge">Soon</span>}
-            </button>
-          ))}
-        </nav>
-        <label className="search-box" aria-label="ค้นหารูปภาพ">
-          <Search size={16} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาภาพ, สี, ฟังก์ชัน..." />
-        </label>
-      </header>
-
-      <section className="hero-grid" id="top">
-        <div className="hero-copy">
-          <p className="model-line">{activeModel.name} / {activeModel.market}</p>
-          <h1>คู่มือออนไลน์และคลังข้อมูลคนใช้รถ</h1>
-          <p className="hero-summary">
-            แหล่งรวบรวมข้อมูลอย่างเป็นทางการสำหรับผู้ใช้ NEVO Q05 พร้อมทิปเทคนิคพิเศษ แนะนำวิธีการใช้งาน และสรุปรายงานปัญหาที่พบจากผู้ใช้จริง
-          </p>
-          <div className="hero-actions">
-            <a className="primary-action" href="#visual-guide">
-              <Images size={16} />
-              ดูภาพและฟังก์ชัน
-            </a>
-            <a className="ghost-action" href="#hub-section">
-              <Lightbulb size={16} />
-              ทริค & ปัญหาที่พบ
-            </a>
-          </div>
+          <strong>NEVO Q05 GUIDE</strong>
         </div>
 
-        <VisualStage
-          image={selectedImage}
-          activeFeatureId={activeFeatureId}
-          onFeatureChange={handleFeatureChange}
-        />
-
-        <aside className="spec-panel">
-          <div className="trim-label">{activeModel.trim}</div>
-          {activeModel.specs.map((spec) => (
-            <div className="spec-row" key={spec.label}>
-              <span>{spec.label}</span>
-              <strong>{spec.value}</strong>
-            </div>
-          ))}
-        </aside>
-      </section>
-
-      <section className="color-strip">
-        <div>
-          <p className="model-line">สีที่แสดงบนหน้า CHANGAN Thailand</p>
-          <h2>เลือกสีตัวรถ</h2>
+        <div className="sidebar-section">
+          <span className="sidebar-section-title">รุ่นรถยนต์</span>
+          <nav className="sidebar-model-tabs" aria-label="Nevo models">
+            {models.map((model) => (
+              <button
+                key={model.id}
+                type="button"
+                className={`sidebar-model-tab ${model.id === activeModelId ? 'is-active' : ''}`}
+                disabled={model.status === 'future'}
+                onClick={() => handleModelChange(model.id)}
+                title={model.status === 'future' ? `${model.name} (เตรียมรองรับในอนาคต)` : undefined}
+              >
+                {model.code}
+                {model.status === 'future' && <span className="tab-soon-badge">Soon</span>}
+              </button>
+            ))}
+          </nav>
         </div>
-        <div className="color-list">
-          {activeModel.colors.map((color) => (
-            <button
-              key={color.label}
-              type="button"
-              className={`color-chip ${selectedImage.id === color.image.id ? 'is-active' : ''}`}
-              onClick={() => setSelectedImageId(color.image.id)}
-            >
-              <span style={{ background: color.swatch }} />
-              <strong>{color.label}</strong>
-              <small>{color.thai}</small>
-            </button>
-          ))}
-        </div>
-      </section>
 
-      <section className="guide-layout" id="visual-guide">
-        <aside className="category-rail">
-          <div className="section-heading">
-            <SlidersHorizontal size={18} />
-            <h2>เลือกหัวข้อ</h2>
-          </div>
-          <div className="category-list">
+        <div className="sidebar-section flex-grow">
+          <span className="sidebar-section-title">หัวข้อคู่มือการใช้งาน</span>
+          <nav className="sidebar-menu-list">
             {activeModel.features.map((feature) => {
               const Icon = feature.icon
               return (
                 <button
                   key={feature.id}
                   type="button"
-                  className={`category-card ${activeFeatureId === feature.id ? 'is-active' : ''}`}
+                  className={`sidebar-menu-item ${activeFeatureId === feature.id ? 'is-active' : ''}`}
                   onClick={() => handleFeatureChange(feature.id)}
                 >
-                  <Icon size={20} />
-                  <span>
-                    <strong>{feature.label}</strong>
-                    <small>{feature.title}</small>
-                  </span>
+                  <Icon size={18} />
+                  <span>{feature.label}</span>
                 </button>
               )
             })}
-          </div>
-        </aside>
-
-        <section className="feature-panel">
-          <div className="feature-image">
-            <img src={activeFeature.image.src} alt={activeFeature.image.alt} />
-          </div>
-          <div className="feature-copy">
-            <p className="category-name">{activeFeature.label}</p>
-            <h2>{activeFeature.title}</h2>
-            <p>{activeFeature.summary}</p>
-            <div className="fact-list">
-              {activeFeature.facts.map((fact) => (
-                <span key={fact}>
-                  <Check size={15} />
-                  {fact}
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <GalleryPanel images={galleryImages} selectedImage={selectedImage} onSelect={setSelectedImageId} />
-      </section>
-
-      {/* Hub Section */}
-      <section className="hub-section" id="hub-section">
-        <div className="hub-header">
-          <div className="hub-title-block">
-            <p className="model-line">NEVO Q05 Owner & Tech Hub</p>
-            <h2>คลังทิปการใช้งานและปัญหาที่พบ</h2>
-            <p className="hub-desc">
-              ร่วมแชร์และศึกษาเทคนิคการตั้งค่าตัวรถ แนะนำวิธีการแก้ไขปัญหาเบื้องต้นจากข้อมูลผู้ใช้รถและทีมช่างเทคนิค Changan
-            </p>
-          </div>
-          <button type="button" className="add-post-btn" onClick={() => setIsModalOpen(true)}>
-            <Plus size={16} />
-            แชร์ทิป / แจ้งปัญหาใหม่
-          </button>
+          </nav>
         </div>
 
-        <div className="hub-controls">
-          <div className="hub-filters">
-            <button
-              type="button"
-              className={`filter-btn ${hubTypeFilter === 'all' ? 'is-active' : ''}`}
-              onClick={() => setHubTypeFilter('all')}
-            >
-              ทั้งหมด
-            </button>
-            <button
-              type="button"
-              className={`filter-btn type-tip ${hubTypeFilter === 'tip' ? 'is-active' : ''}`}
-              onClick={() => setHubTypeFilter('tip')}
-            >
-              <Lightbulb size={14} />
-              ทริคแนะนำ
-            </button>
-            <button
-              type="button"
-              className={`filter-btn type-issue ${hubTypeFilter === 'issue' ? 'is-active' : ''}`}
-              onClick={() => setHubTypeFilter('issue')}
-            >
-              <AlertTriangle size={14} />
-              ปัญหาที่พบ
-            </button>
-          </div>
-
-          <div className="hub-search-row">
-            <label className="hub-cat-select" aria-label="กรองตามหมวดหมู่">
-              <select value={hubCatFilter} onChange={(e) => setHubCatFilter(e.target.value)}>
-                <option value="all">ทุกหมวดหมู่</option>
-                {Object.entries(categoryLabels).map(([id, label]) => (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="hub-search-box">
-              <Search size={16} />
-              <input
-                type="text"
-                placeholder="ค้นหาทิปหรือรายงานปัญหา..."
-                value={hubSearch}
-                onChange={(e) => setHubSearch(e.target.value)}
-              />
-              {hubSearch && (
-                <button type="button" className="clear-search" onClick={() => setHubSearch('')}>
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
+        <div className="sidebar-footer-menu">
+          <a href="#hub-section" className="sidebar-menu-item hub-link">
+            <Lightbulb size={18} />
+            <span>คลังทิป & ปัญหาที่พบ</span>
+          </a>
         </div>
+      </aside>
 
-        <div className="hub-grid">
-          {filteredHubItems.length > 0 ? (
-            filteredHubItems.map((item) => {
-              const isVoted = votedIds.includes(item.id)
-              const isWorkaroundOpen = openWorkaroundIds.includes(item.id)
-              return (
-                <article key={item.id} className={`hub-card type-${item.type}`}>
-                  <header className="hub-card-header">
-                    <span className={`badge-type ${item.type}`}>
-                      {item.type === 'tip' ? <Lightbulb size={12} /> : <AlertTriangle size={12} />}
-                      {item.type === 'tip' ? 'ทริคแนะนำ' : 'ปัญหาที่พบ'}
-                    </span>
-                    <span className="badge-cat">
-                      {categoryLabels[item.category] || item.category}
-                    </span>
-                  </header>
-                  
-                  <h3 className="hub-card-title">{item.title}</h3>
-                  <p className="hub-card-desc">{item.description}</p>
+      {/* Mobile Drawer (Hamburger Menu) */}
+      {isMobileMenuOpen && (
+        <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}>
+          <aside className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
+            <header className="drawer-header">
+              <div className="sidebar-brand">
+                <span className="brand-mark">N</span>
+                <strong>NEVO Q05 GUIDE</strong>
+              </div>
+              <button type="button" className="close-drawer-btn" onClick={() => setIsMobileMenuOpen(false)}>
+                <X size={20} />
+              </button>
+            </header>
 
-                  {item.image && (
-                    <div className="hub-card-image">
-                      <img src={item.image} alt={item.title} loading="lazy" />
-                    </div>
-                  )}
+            <div className="drawer-content">
+              <div className="sidebar-section">
+                <span className="sidebar-section-title">รุ่นรถยนต์</span>
+                <nav className="sidebar-model-tabs" aria-label="Nevo models">
+                  {models.map((model) => (
+                    <button
+                      key={model.id}
+                      type="button"
+                      className={`sidebar-model-tab ${model.id === activeModelId ? 'is-active' : ''}`}
+                      disabled={model.status === 'future'}
+                      onClick={() => {
+                        handleModelChange(model.id)
+                        setIsMobileMenuOpen(false)
+                      }}
+                      title={model.status === 'future' ? `${model.name} (เตรียมรองรับในอนาคต)` : undefined}
+                    >
+                      {model.code}
+                      {model.status === 'future' && <span className="tab-soon-badge">Soon</span>}
+                    </button>
+                  ))}
+                </nav>
+              </div>
 
-                  {item.solution && (
-                    <div className="workaround-section">
+              <div className="sidebar-section">
+                <span className="sidebar-section-title">หัวข้อคู่มือการใช้งาน</span>
+                <nav className="sidebar-menu-list">
+                  {activeModel.features.map((feature) => {
+                    const Icon = feature.icon
+                    return (
                       <button
+                        key={feature.id}
                         type="button"
-                        className={`workaround-toggle-btn ${isWorkaroundOpen ? 'is-open' : ''}`}
-                        onClick={() => toggleWorkaround(item.id)}
+                        className={`sidebar-menu-item ${activeFeatureId === feature.id ? 'is-active' : ''}`}
+                        onClick={() => {
+                          handleFeatureChange(feature.id)
+                          setIsMobileMenuOpen(false)
+                        }}
                       >
-                        <span>แนวทางแก้ไข / วิธีแก้เบื้องต้น</span>
-                        {isWorkaroundOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                        <Icon size={18} />
+                        <span>{feature.label}</span>
                       </button>
+                    )
+                  })}
+                </nav>
+              </div>
+
+              <div className="sidebar-footer-menu" style={{ border: 'none', padding: 0, marginTop: '20px' }}>
+                <a
+                  href="#hub-section"
+                  className="sidebar-menu-item hub-link"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Lightbulb size={18} />
+                  <span>คลังทิป & ปัญหาที่พบ</span>
+                </a>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="main-content-layout">
+        <header className="main-topbar">
+          <button
+            type="button"
+            className="hamburger-menu-btn"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="เปิดเมนูนำทาง"
+          >
+            <Menu size={20} />
+          </button>
+          
+          <div className="mobile-brand-title">
+            <span className="brand-mark">N</span>
+            <strong>NEVO Q05 GUIDE</strong>
+          </div>
+
+          <div className="flex-grow" />
+
+          <label className="main-search-box" aria-label="ค้นหารูปภาพ">
+            <Search size={16} />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาทิป, ปัญหา, ฟังก์ชัน..." />
+          </label>
+        </header>
+
+        <div className="content-container">
+          <section className="dashboard-grid" id="top">
+            <div className="dashboard-header-block">
+              <p className="model-line">{activeModel.name} / {activeModel.market}</p>
+              <h1>คู่มือออนไลน์สำหรับคนใช้ Nevo Q05</h1>
+              <p className="hero-summary">
+                รวบรวมรายละเอียดคู่มือการใช้งาน ทิปเทคนิคพิเศษ และปัญหาที่พบบ่อยพร้อมแนวทางแก้ไขในที่เดียว
+              </p>
+            </div>
+
+            <div className="visual-stage-container">
+              <VisualStage
+                image={selectedImage}
+                activeFeatureId={activeFeatureId}
+                onFeatureChange={handleFeatureChange}
+              />
+            </div>
+
+            <aside className="spec-panel-dashboard">
+              <div className="trim-label-dashboard">สเปกเด่น (Thai Market)</div>
+              {activeModel.specs.map((spec) => (
+                <div className="spec-row-dashboard" key={spec.label}>
+                  <span>{spec.label}</span>
+                  <strong>{spec.value}</strong>
+                </div>
+              ))}
+            </aside>
+          </section>
+
+          {/* Interactive Manual Detail Panel */}
+          <section className="manual-detail-section" id="manual-detail">
+            <div className="manual-detail-panel">
+              <div className="manual-detail-image">
+                <img src={activeFeature.image.src} alt={activeFeature.image.alt} />
+              </div>
+              <div className="manual-detail-copy">
+                <p className="category-name">{activeFeature.label}</p>
+                <h2>{activeFeature.title}</h2>
+                <p>{activeFeature.summary}</p>
+                <div className="fact-list">
+                  {activeFeature.facts.map((fact) => (
+                    <span key={fact}>
+                      <Check size={15} />
+                      {fact}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Embedded Color Selector inside "Exterior (ภายนอก)" category */}
+            {activeFeatureId === 'exterior' && (
+              <div className="embedded-color-strip">
+                <header className="color-strip-header">
+                  <p className="model-line">สีที่แสดงบนหน้า CHANGAN Thailand</p>
+                  <h2>เลือกสีตัวรถ (Official Colors)</h2>
+                </header>
+                <div className="color-list-embedded">
+                  {activeModel.colors.map((color) => (
+                    <button
+                      key={color.label}
+                      type="button"
+                      className={`color-chip-embedded ${selectedImage.id === color.image.id ? 'is-active' : ''}`}
+                      onClick={() => setSelectedImageId(color.image.id)}
+                    >
+                      <span style={{ background: color.swatch }} />
+                      <div className="color-chip-text">
+                        <strong>{color.label}</strong>
+                        <small>{color.thai}</small>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Hub Section */}
+          <section className="hub-section-layout" id="hub-section">
+            <div className="hub-header">
+              <div className="hub-title-block">
+                <p className="model-line">NEVO Q05 Owner & Tech Hub</p>
+                <h2>คลังทิปการใช้งานและปัญหาที่พบ</h2>
+                <p className="hub-desc">
+                  ร่วมแชร์และศึกษาเทคนิคการตั้งค่าตัวรถ แนะนำวิธีการแก้ไขปัญหาเบื้องต้นจากข้อมูลผู้ใช้รถและทีมช่างเทคนิค Changan
+                </p>
+              </div>
+              <button type="button" className="add-post-btn" onClick={() => setIsModalOpen(true)}>
+                <Plus size={16} />
+                แชร์ทิป / แจ้งปัญหาใหม่
+              </button>
+            </div>
+
+            <div className="hub-controls">
+              <div className="hub-filters">
+                <button
+                  type="button"
+                  className={`filter-btn ${hubTypeFilter === 'all' ? 'is-active' : ''}`}
+                  onClick={() => setHubTypeFilter('all')}
+                >
+                  ทั้งหมด
+                </button>
+                <button
+                  type="button"
+                  className={`filter-btn type-tip ${hubTypeFilter === 'tip' ? 'is-active' : ''}`}
+                  onClick={() => setHubTypeFilter('tip')}
+                >
+                  <Lightbulb size={14} />
+                  ทริคแนะนำ
+                </button>
+                <button
+                  type="button"
+                  className={`filter-btn type-issue ${hubTypeFilter === 'issue' ? 'is-active' : ''}`}
+                  onClick={() => setHubTypeFilter('issue')}
+                >
+                  <AlertTriangle size={14} />
+                  ปัญหาที่พบ
+                </button>
+              </div>
+
+              <div className="hub-search-row">
+                <label className="hub-cat-select" aria-label="กรองตามหมวดหมู่">
+                  <select value={hubCatFilter} onChange={(e) => setHubCatFilter(e.target.value)}>
+                    <option value="all">ทุกหมวดหมู่</option>
+                    {Object.entries(categoryLabels).map(([id, label]) => (
+                      <option key={id} value={id}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="hub-search-box">
+                  <Search size={16} />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาทิปหรือรายงานปัญหา..."
+                    value={hubSearch}
+                    onChange={(e) => setHubSearch(e.target.value)}
+                  />
+                  {hubSearch && (
+                    <button type="button" className="clear-search" onClick={() => setHubSearch('')}>
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="hub-grid">
+              {filteredHubItems.length > 0 ? (
+                filteredHubItems.map((item) => {
+                  const isVoted = votedIds.includes(item.id)
+                  const isWorkaroundOpen = openWorkaroundIds.includes(item.id)
+                  return (
+                    <article key={item.id} className={`hub-card type-${item.type}`}>
+                      <header className="hub-card-header">
+                        <span className={`badge-type ${item.type}`}>
+                          {item.type === 'tip' ? <Lightbulb size={12} /> : <AlertTriangle size={12} />}
+                          {item.type === 'tip' ? 'ทริคแนะนำ' : 'ปัญหาที่พบ'}
+                        </span>
+                        <span className="badge-cat">
+                          {categoryLabels[item.category] || item.category}
+                        </span>
+                      </header>
                       
-                      {isWorkaroundOpen && (
-                        <div className="workaround-content animate-fade-slide">
-                          <p>{item.solution}</p>
+                      <h3 className="hub-card-title">{item.title}</h3>
+                      <p className="hub-card-desc">{item.description}</p>
+
+                      {item.image && (
+                        <div className="hub-card-image">
+                          <img src={item.image} alt={item.title} loading="lazy" />
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  <footer className="hub-card-footer">
-                    <div className="hub-card-meta">
-                      <span className="meta-author">โดย: {item.author}</span>
-                      <span className="meta-date">{item.date}</span>
-                    </div>
-                    
-                    <button
-                      type="button"
-                      className={`vote-btn ${isVoted ? 'is-voted' : ''}`}
-                      onClick={() => handleVote(item.id)}
-                      title={isVoted ? 'โหวตแล้ว' : 'คิดว่ามีประโยชน์'}
-                    >
-                      <ThumbsUp size={13} />
-                      <span>{item.upvotes} {isVoted ? 'ขอบคุณ' : 'มีประโยชน์'}</span>
-                    </button>
-                  </footer>
-                </article>
-              )
-            })
-          ) : (
-            <div className="hub-empty-state">
-              <Info size={40} className="empty-icon" />
-              <h3>ไม่พบข้อมูลทิปหรือรายงานปัญหา</h3>
-              <p>ลองค้นหาด้วยคำอื่น หรือกดปุ่ม "แชร์ทิป / แจ้งปัญหาใหม่" ด้านขวาเพื่อโพสต์ข้อมูลแรกในหมวดนี้</p>
+                      {item.solution && (
+                        <div className="workaround-section">
+                          <button
+                            type="button"
+                            className={`workaround-toggle-btn ${isWorkaroundOpen ? 'is-open' : ''}`}
+                            onClick={() => toggleWorkaround(item.id)}
+                          >
+                            <span>แนวทางแก้ไข / วิธีแก้เบื้องต้น</span>
+                            {isWorkaroundOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                          </button>
+                          
+                          {isWorkaroundOpen && (
+                            <div className="workaround-content animate-fade-slide">
+                              <p>{item.solution}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <footer className="hub-card-footer">
+                        <div className="hub-card-meta">
+                          <span className="meta-author">โดย: {item.author}</span>
+                          <span className="meta-date">{item.date}</span>
+                        </div>
+                        
+                        <button
+                          type="button"
+                          className={`vote-btn ${isVoted ? 'is-voted' : ''}`}
+                          onClick={() => handleVote(item.id)}
+                          title={isVoted ? 'โหวตแล้ว' : 'คิดว่ามีประโยชน์'}
+                        >
+                          <ThumbsUp size={13} />
+                          <span>{item.upvotes} {isVoted ? 'ขอบคุณ' : 'มีประโยชน์'}</span>
+                        </button>
+                      </footer>
+                    </article>
+                  )
+                })
+              ) : (
+                <div className="hub-empty-state">
+                  <Info size={40} className="empty-icon" />
+                  <h3>ไม่พบข้อมูลทิปหรือรายงานปัญหา</h3>
+                  <p>ลองค้นหาด้วยคำอื่น หรือกดปุ่ม "แชร์ทิป / แจ้งปัญหาใหม่" ด้านขวาเพื่อโพสต์ข้อมูลแรกในหมวดนี้</p>
+                </div>
+              )}
             </div>
-          )}
+          </section>
         </div>
-      </section>
+      </div>
 
-      {/* Modal overlays */}
+      {/* Submit Modal */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
@@ -704,7 +799,7 @@ function App() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   )
 }
 
@@ -746,35 +841,4 @@ function VisualStage({ image, activeFeatureId, onFeatureChange }: VisualStagePro
   )
 }
 
-type GalleryPanelProps = {
-  images: ImageAsset[]
-  selectedImage?: ImageAsset
-  onSelect: (id: string) => void
-}
-
-function GalleryPanel({ images, selectedImage, onSelect }: GalleryPanelProps) {
-  return (
-    <section className="gallery-panel">
-      <div className="playlist-head">
-        <h2>คลังภาพ Q05 รุ่นไทย</h2>
-        <span>{images.length} ภาพ</span>
-      </div>
-      <div className="gallery-grid">
-        {images.map((image) => (
-          <button
-            key={image.id}
-            type="button"
-            className={`gallery-card ${selectedImage?.id === image.id ? 'is-active' : ''}`}
-            onClick={() => onSelect(image.id)}
-          >
-            <img src={image.src} alt={image.alt} loading="lazy" />
-            <span>{image.title}</span>
-          </button>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 export default App
-

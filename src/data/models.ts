@@ -99,7 +99,7 @@ const q05Features: FeatureSection[] = [
     summary: 'สรุปรุ่นไทยแบบดูง่าย เน้นข้อมูลที่คนใช้รถต้องเปิดดูบ่อยและภาพจริงจากหน้า CHANGAN Thailand',
     icon: Images,
     image: q05Hero,
-    facts: ['ราคาเริ่มต้น 629,900 THB', 'กำลังสูงสุด 163 PS', 'ระยะทางไฟฟ้า NEDC 462 km'],
+    facts: ['รุ่นย่อยในไทย: MAX / ULTRA', 'กำลังสูงสุด 163 PS', 'ระยะทางไฟฟ้า NEDC 462 km'],
   },
   {
     id: 'screen',
@@ -179,7 +179,6 @@ export const models: VehicleModel[] = [
       'ฐานข้อมูลภาพและข้อมูลสำหรับ NEVO Q05 รุ่นที่ขายในไทย ใช้ภาพ official Thailand เป็นหลักเพื่อเลี่ยงข้อมูล/หน้าตารถจากประเทศอื่นที่ไม่ตรงรุ่น',
     sourceUrl: 'https://www.changan.co.th/th/nevo-q05/',
     specs: [
-      { label: 'ราคาเริ่มต้น', value: '629,900 THB' },
       { label: 'กำลังสูงสุด', value: '163 PS' },
       { label: 'ระยะทางไฟฟ้า', value: '462 km NEDC' },
       { label: 'DC สูงสุด', value: '162 kW' },
