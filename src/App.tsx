@@ -1,52 +1,38 @@
 import { useState } from 'react'
-import {
-  ArrowUpRight,
-  Check,
-  Clock3,
-  LibraryBig,
-  Play,
-  Search,
-  SlidersHorizontal,
-} from 'lucide-react'
+import { ArrowUpRight, Check, Images, Search, SlidersHorizontal } from 'lucide-react'
 import './App.css'
-import { CarViewer } from './components/CarViewer'
-import { categories, models, type ModelId, type VehiclePartId } from './data/models'
-import type { GuideVideo, VideoCategoryId } from './data/q05Videos'
+import { models, type FeatureId, type ImageAsset, type ModelId } from './data/models'
 
 function App() {
   const [activeModelId, setActiveModelId] = useState<ModelId>('q05')
-  const [activePart, setActivePart] = useState<VehiclePartId>('overview')
-  const [selectedVideoId, setSelectedVideoId] = useState('2103753')
+  const [activeFeatureId, setActiveFeatureId] = useState<FeatureId>('overview')
+  const [selectedImageId, setSelectedImageId] = useState('q05-hero')
   const [query, setQuery] = useState('')
 
   const activeModel = models.find((model) => model.id === activeModelId) ?? models[0]
-  const activeCategoryId = categories.find((category) => category.part === activePart)?.id ?? 'overview'
-
-  const videos = activeModel.videos
+  const activeFeature = activeModel.features.find((feature) => feature.id === activeFeatureId) ?? activeModel.features[0]
+  const selectedImage =
+    activeModel.images.find((image) => image.id === selectedImageId) ?? activeFeature?.image ?? activeModel.images[0]
   const normalizedQuery = query.trim().toLocaleLowerCase()
-  const filteredVideos = videos.filter((video) => {
-    const matchesCategory = video.categoryId === activeCategoryId || activePart === 'overview'
-    const matchesSearch =
-      !normalizedQuery || video.title.toLocaleLowerCase().includes(normalizedQuery) || video.id.includes(normalizedQuery)
-    return matchesCategory && matchesSearch
+  const galleryImages = activeModel.images.filter((image) => {
+    if (image.kind === 'hero') return false
+    if (!normalizedQuery) return true
+    return `${image.title} ${image.alt}`.toLocaleLowerCase().includes(normalizedQuery)
   })
-  const selectedVideo =
-    filteredVideos.find((video) => video.id === selectedVideoId) ?? filteredVideos[0] ?? videos[0]
-  const categoryCounts = videos.reduce<Record<string, number>>((counts, video) => {
-    counts[video.categoryId] = (counts[video.categoryId] ?? 0) + 1
-    return counts
-  }, {})
-
-  const handlePartChange = (part: VehiclePartId) => {
-    setActivePart(part)
-  }
 
   const handleModelChange = (modelId: ModelId) => {
     const nextModel = models.find((model) => model.id === modelId)
     if (!nextModel || nextModel.status === 'future') return
     setActiveModelId(modelId)
-    setActivePart('overview')
-    setSelectedVideoId(nextModel.videos[0]?.id ?? '')
+    setActiveFeatureId('overview')
+    setSelectedImageId(nextModel.images[0]?.id ?? '')
+  }
+
+  const handleFeatureChange = (featureId: FeatureId) => {
+    const feature = activeModel.features.find((item) => item.id === featureId)
+    if (!feature) return
+    setActiveFeatureId(featureId)
+    setSelectedImageId(feature.image.id)
   }
 
   return (
@@ -69,32 +55,34 @@ function App() {
             </button>
           ))}
         </nav>
-        <label className="search-box" aria-label="ค้นหาคู่มือ">
+        <label className="search-box" aria-label="ค้นหารูปภาพ">
           <Search size={16} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาฟังก์ชัน..." />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาภาพ, สี, ฟังก์ชัน..." />
         </label>
       </header>
 
       <section className="hero-grid" id="top">
         <div className="hero-copy">
-          <p className="model-line">{activeModel.name}</p>
-          <h1>คู่มืออัจฉริยะสำหรับ Nevo Q05</h1>
+          <p className="model-line">{activeModel.name} / {activeModel.market}</p>
+          <h1>ฐานข้อมูลภาพสำหรับ NEVO Q05 รุ่นไทย</h1>
           <p className="hero-summary">{activeModel.summary}</p>
           <div className="hero-actions">
-            <a className="primary-action" href="#guide">
-              <Play size={16} />
-              เริ่มดูคู่มือ
+            <a className="primary-action" href="#visual-guide">
+              <Images size={16} />
+              ดูภาพและฟังก์ชัน
             </a>
-            <a className="ghost-action" href={selectedVideo?.detailUrl} target="_blank" rel="noreferrer">
-              แหล่งข้อมูล
+            <a className="ghost-action" href={activeModel.sourceUrl} target="_blank" rel="noreferrer">
+              Official Thailand
               <ArrowUpRight size={15} />
             </a>
           </div>
         </div>
 
-        <div className="viewer-panel">
-          <CarViewer activePart={activePart} onPartChange={handlePartChange} />
-        </div>
+        <VisualStage
+          image={selectedImage}
+          activeFeatureId={activeFeatureId}
+          onFeatureChange={handleFeatureChange}
+        />
 
         <aside className="spec-panel">
           <div className="trim-label">{activeModel.trim}</div>
@@ -107,28 +95,47 @@ function App() {
         </aside>
       </section>
 
-      <section className="guide-layout" id="guide">
+      <section className="color-strip">
+        <div>
+          <p className="model-line">สีที่แสดงบนหน้า CHANGAN Thailand</p>
+          <h2>เลือกสีตัวรถ</h2>
+        </div>
+        <div className="color-list">
+          {activeModel.colors.map((color) => (
+            <button
+              key={color.label}
+              type="button"
+              className={`color-chip ${selectedImage.id === color.image.id ? 'is-active' : ''}`}
+              onClick={() => setSelectedImageId(color.image.id)}
+            >
+              <span style={{ background: color.swatch }} />
+              <strong>{color.label}</strong>
+              <small>{color.thai}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="guide-layout" id="visual-guide">
         <aside className="category-rail">
           <div className="section-heading">
             <SlidersHorizontal size={18} />
-            <h2>เลือกพาร์ทของรถ</h2>
+            <h2>เลือกหัวข้อ</h2>
           </div>
           <div className="category-list">
-            {categories.map((category) => {
-              const Icon = category.icon
-              const count = categoryCounts[category.id] ?? 0
-              const isActive = activeCategoryId === category.id
+            {activeModel.features.map((feature) => {
+              const Icon = feature.icon
               return (
                 <button
-                  key={category.id}
+                  key={feature.id}
                   type="button"
-                  className={`category-card ${isActive ? 'is-active' : ''}`}
-                  onClick={() => handlePartChange(category.part)}
+                  className={`category-card ${activeFeatureId === feature.id ? 'is-active' : ''}`}
+                  onClick={() => handleFeatureChange(feature.id)}
                 >
                   <Icon size={20} />
                   <span>
-                    <strong>{category.label}</strong>
-                    <small>{count} วิดีโอ</small>
+                    <strong>{feature.label}</strong>
+                    <small>{feature.title}</small>
                   </span>
                 </button>
               )
@@ -136,89 +143,96 @@ function App() {
           </div>
         </aside>
 
-        <section className="video-workspace">
-          <VideoPanel video={selectedVideo} activeCategoryId={activeCategoryId} />
-          <VideoList videos={filteredVideos} selectedVideoId={selectedVideo?.id} onSelect={setSelectedVideoId} />
+        <section className="feature-panel">
+          <div className="feature-image">
+            <img src={activeFeature.image.src} alt={activeFeature.image.alt} />
+          </div>
+          <div className="feature-copy">
+            <p className="category-name">{activeFeature.label}</p>
+            <h2>{activeFeature.title}</h2>
+            <p>{activeFeature.summary}</p>
+            <div className="fact-list">
+              {activeFeature.facts.map((fact) => (
+                <span key={fact}>
+                  <Check size={15} />
+                  {fact}
+                </span>
+              ))}
+            </div>
+          </div>
         </section>
+
+        <GalleryPanel images={galleryImages} selectedImage={selectedImage} onSelect={setSelectedImageId} />
       </section>
     </main>
   )
 }
 
-type VideoPanelProps = {
-  video?: GuideVideo
-  activeCategoryId: VideoCategoryId
+type VisualStageProps = {
+  image?: ImageAsset
+  activeFeatureId: FeatureId
+  onFeatureChange: (featureId: FeatureId) => void
 }
 
-function VideoPanel({ video, activeCategoryId }: VideoPanelProps) {
-  const category = categories.find((item) => item.id === activeCategoryId)
-
-  if (!video) {
-    return (
-      <article className="video-panel empty-state">
-        <LibraryBig size={30} />
-        <h2>ยังไม่มีข้อมูลวิดีโอ</h2>
-        <p>โมเดลนี้ถูกเตรียมไว้สำหรับเพิ่มข้อมูลในอนาคต</p>
-      </article>
-    )
-  }
+function VisualStage({ image, activeFeatureId, onFeatureChange }: VisualStageProps) {
+  const hotspots: Array<{ id: FeatureId; label: string; x: number; y: number }> = [
+    { id: 'screen', label: 'หน้าจอ', x: 50, y: 48 },
+    { id: 'comfort', label: 'ห้องโดยสาร', x: 39, y: 55 },
+    { id: 'charging', label: 'ชาร์จ', x: 76, y: 63 },
+    { id: 'exterior', label: 'ภายนอก', x: 25, y: 62 },
+    { id: 'safety', label: 'Safety', x: 64, y: 35 },
+  ]
 
   return (
-    <article className="video-panel">
-      <div className="video-player">
-        <video src={video.videoUrl} controls playsInline preload="metadata" />
+    <div className="viewer-panel visual-stage">
+      {image ? <img className="stage-image" src={image.src} alt={image.alt} /> : null}
+      <div className="stage-caption">
+        <strong>{image?.title}</strong>
+        <span>ภาพตลาดไทยจาก CHANGAN Thailand</span>
       </div>
-      <div className="video-meta">
-        <div>
-          <span className="category-name">{category?.label}</span>
-          <h2>{video.title}</h2>
-        </div>
-        <span className="duration">
-          <Clock3 size={15} />
-          {video.duration}
-        </span>
-      </div>
-      <p>
-        ตอนที่ {video.order} จากคู่มือ Q05 ใช้สำหรับดูขั้นตอนการใช้งานจริง พร้อมเปิดเล่นในหน้านี้หรือกลับไปยังหน้า
-        Yiche ต้นทางได้
-      </p>
-      <a className="source-link" href={video.detailUrl} target="_blank" rel="noreferrer">
-        เปิดหน้าต้นทาง
-        <ArrowUpRight size={15} />
-      </a>
-    </article>
+      {hotspots.map((hotspot) => (
+        <button
+          key={hotspot.id}
+          type="button"
+          className={`part-marker ${activeFeatureId === hotspot.id ? 'is-active' : ''}`}
+          style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
+          onClick={() => onFeatureChange(hotspot.id)}
+        >
+          <span />
+          {hotspot.label}
+        </button>
+      ))}
+    </div>
   )
 }
 
-type VideoListProps = {
-  videos: GuideVideo[]
-  selectedVideoId?: string
+type GalleryPanelProps = {
+  images: ImageAsset[]
+  selectedImage?: ImageAsset
   onSelect: (id: string) => void
 }
 
-function VideoList({ videos, selectedVideoId, onSelect }: VideoListProps) {
+function GalleryPanel({ images, selectedImage, onSelect }: GalleryPanelProps) {
   return (
-    <div className="playlist">
+    <section className="gallery-panel">
       <div className="playlist-head">
-        <h2>รายการคู่มือ</h2>
-        <span>{videos.length} ตอน</span>
+        <h2>คลังภาพ Q05 รุ่นไทย</h2>
+        <span>{images.length} ภาพ</span>
       </div>
-      <div className="playlist-scroll">
-        {videos.map((video) => (
+      <div className="gallery-grid">
+        {images.map((image) => (
           <button
-            key={video.id}
+            key={image.id}
             type="button"
-            className={`playlist-row ${selectedVideoId === video.id ? 'is-active' : ''}`}
-            onClick={() => onSelect(video.id)}
+            className={`gallery-card ${selectedImage?.id === image.id ? 'is-active' : ''}`}
+            onClick={() => onSelect(image.id)}
           >
-            <span className="row-index">{String(video.order).padStart(2, '0')}</span>
-            <span className="row-title">{video.title}</span>
-            <span className="row-duration">{video.duration}</span>
-            {selectedVideoId === video.id ? <Check size={15} /> : <Play size={15} />}
+            <img src={image.src} alt={image.alt} loading="lazy" />
+            <span>{image.title}</span>
           </button>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
 
