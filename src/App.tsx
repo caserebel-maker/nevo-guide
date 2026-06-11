@@ -25,6 +25,45 @@ import {
   type HubItemType,
 } from './data/models'
 
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (event) => {
+      const img = new Image()
+      img.src = event.target?.result as string
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const maxW = 800
+        const maxH = 800
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > maxW) {
+            height *= maxW / width
+            width = maxW
+          }
+        } else {
+          if (height > maxH) {
+            width *= maxH / height
+            height = maxH
+          }
+        }
+        canvas.width = width
+        canvas.height = height
+
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, width, height)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+        resolve(dataUrl)
+      }
+      img.onerror = (err) => reject(err)
+    }
+    reader.onerror = (err) => reject(err)
+  })
+}
+
 function App() {
   const [activeModelId, setActiveModelId] = useState<ModelId>('q05')
   const [activeFeatureId, setActiveFeatureId] = useState<FeatureId>('overview')
@@ -48,8 +87,27 @@ function App() {
   const [formDescription, setFormDescription] = useState('')
   const [formSolution, setFormSolution] = useState('')
   const [formAuthor, setFormAuthor] = useState('')
+  const [formImage, setFormImage] = useState('')
   const [formError, setFormError] = useState('')
   const [showSuccessToast, setShowSuccessToast] = useState(false)
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    if (!file.type.startsWith('image/')) {
+      setFormError('กรุณาเลือกไฟล์รูปภาพเท่านั้น')
+      return
+    }
+    
+    try {
+      const compressed = await compressImage(file)
+      setFormImage(compressed)
+      setFormError('')
+    } catch (err) {
+      setFormError('เกิดข้อผิดพลาดในการโหลดรูปภาพ')
+    }
+  }
 
   // Load from local storage on mount
   useEffect(() => {
@@ -147,6 +205,7 @@ function App() {
       title: formTitle.trim(),
       description: formDescription.trim(),
       solution: formType === 'issue' ? (formSolution.trim() || undefined) : undefined,
+      image: formImage || undefined,
       upvotes: 0,
       author: formAuthor.trim() || 'ผู้ใช้ทั่วไป',
       date: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
@@ -161,6 +220,7 @@ function App() {
     setFormDescription('')
     setFormSolution('')
     setFormAuthor('')
+    setFormImage('')
     setFormError('')
     setIsModalOpen(false)
     
@@ -430,6 +490,12 @@ function App() {
                   <h3 className="hub-card-title">{item.title}</h3>
                   <p className="hub-card-desc">{item.description}</p>
 
+                  {item.image && (
+                    <div className="hub-card-image">
+                      <img src={item.image} alt={item.title} loading="lazy" />
+                    </div>
+                  )}
+
                   {item.solution && (
                     <div className="workaround-section">
                       <button
@@ -583,6 +649,35 @@ function App() {
                   />
                 </div>
               )}
+
+              <div className="form-group">
+                <span className="form-label">รูปภาพประกอบ (ถ้ามี)</span>
+                {!formImage ? (
+                  <label className="file-upload-area">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      style={{ display: 'none' }}
+                    />
+                    <Images size={20} className="upload-icon" />
+                    <span>คลิกเพื่อเลือกหรืออัปโหลดรูปภาพ</span>
+                    <small>รองรับไฟล์รูปภาพทั่วไป ระบบจะย่อขนาดให้อัตโนมัติ</small>
+                  </label>
+                ) : (
+                  <div className="uploaded-preview-container">
+                    <img src={formImage} alt="Preview" className="uploaded-preview" />
+                    <button
+                      type="button"
+                      className="remove-image-btn"
+                      onClick={() => setFormImage('')}
+                      title="ลบรูปภาพ"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="form-group">
                 <label htmlFor="form-author" className="form-label">ชื่อ / นามแฝงผู้โพสต์</label>

@@ -257,6 +257,7 @@ export type HubItem = {
   upvotes: number
   author: string
   date: string
+  image?: string // Base64 data URL or external image path
 }
 
 export const initialHubItems: HubItem[] = [
@@ -280,6 +281,7 @@ export const initialHubItems: HubItem[] = [
     upvotes: 28,
     author: 'Changan Tech',
     date: '2026-06-02',
+    image: 'https://www.changan.co.th/images/nevo/q05/gallery/pic-004.jpg',
   },
   {
     id: 'hub-03',
@@ -291,6 +293,7 @@ export const initialHubItems: HubItem[] = [
     upvotes: 35,
     author: 'Nevo Driver',
     date: '2026-06-03',
+    image: 'https://www.changan.co.th/images/nevo/q05/gallery/pic-008.jpg',
   },
   {
     id: 'hub-04',
@@ -324,6 +327,7 @@ export const initialHubItems: HubItem[] = [
     upvotes: 56,
     author: 'TOU User',
     date: '2026-06-06',
+    image: 'https://www.changan.co.th/images/nevo/q05/gallery/pic-006.jpg',
   },
 ]
 
