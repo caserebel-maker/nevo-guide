@@ -13,6 +13,8 @@ import {
   Info,
   Menu,
   Images,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import './App.css'
 import {
@@ -68,7 +70,15 @@ function App() {
   const [activeModelId, setActiveModelId] = useState<ModelId>('q05')
   const [activeFeatureId, setActiveFeatureId] = useState<FeatureId>('overview')
   const [selectedImageId, setSelectedImageId] = useState('q05-hero')
-  const [query, setQuery] = useState('')
+
+  // Theme State
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('nevo_guide_theme')
+    return (saved as 'light' | 'dark') || 'light'
+  })
+
+  // Scroll State for topbar styling
+  const [isScrolled, setIsScrolled] = useState(false)
 
   // Layout States
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -115,6 +125,25 @@ function App() {
       } catch (e) {}
     }
   }, [])
+
+  // Sync theme with DOM attribute
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('nevo_guide_theme', theme)
+  }, [theme])
+
+  // Track window scroll for transparent topbar
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
+  }
 
   const activeModel = models.find((model) => model.id === activeModelId) ?? models[0]
   const activeFeature = activeModel.features.find((feature) => feature.id === activeFeatureId) ?? activeModel.features[0]
@@ -391,7 +420,7 @@ function App() {
 
       {/* Main Content Area */}
       <div className="main-content-layout">
-        <header className="main-topbar">
+        <header className={`main-topbar ${isScrolled ? 'is-scrolled' : ''}`}>
           <button
             type="button"
             className="hamburger-menu-btn"
@@ -408,20 +437,55 @@ function App() {
 
           <div className="flex-grow" />
 
+          {/* Theme Switcher Button */}
+          <button
+            type="button"
+            className="theme-switcher-btn"
+            onClick={toggleTheme}
+            aria-label={theme === 'light' ? 'เปิดโหมดมืด' : 'เปิดโหมดสว่าง'}
+            title={theme === 'light' ? 'เปิดโหมดมืด' : 'เปิดโหมดสว่าง'}
+          >
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+
           <label className="main-search-box" aria-label="ค้นหารูปภาพ">
             <Search size={16} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาทิป, ปัญหา, ฟังก์ชัน..." />
+            <input
+              value={hubSearch}
+              onChange={(event) => setHubSearch(event.target.value)}
+              placeholder="ค้นหาทิป, ปัญหา, ฟังก์ชัน..."
+            />
           </label>
         </header>
 
+        {/* Hero Banner Section */}
+        <section className="hero-banner">
+          <div className="hero-banner-overlay" />
+          <img className="hero-banner-img" src={activeModel.images[0].src} alt={activeModel.name} />
+          <div className="hero-banner-content">
+            <span className="hero-banner-tag">{activeModel.name} / {activeModel.market}</span>
+            <h1 className="hero-banner-title">คู่มือออนไลน์สำหรับคนใช้ Nevo Q05</h1>
+            <p className="hero-banner-desc">
+              แหล่งรวบรวมข้อมูลอย่างเป็นทางการสำหรับผู้ใช้ NEVO Q05 พร้อมทิปเทคนิคพิเศษ แนะนำวิธีการใช้งาน และสรุปรายงานปัญหาที่พบจากผู้ใช้จริง
+            </p>
+            <div className="hero-banner-actions">
+              <a href="#manual-detail" className="hero-btn hero-btn-primary">
+                อ่านคู่มือการใช้งาน
+              </a>
+              <a href="#hub-section" className="hero-btn hero-btn-secondary">
+                คลังทิป & ปัญหาที่พบ
+              </a>
+            </div>
+          </div>
+        </section>
+
         <div className="content-container">
           <section className="dashboard-grid" id="top">
-            <div className="dashboard-header-block">
-              <p className="model-line">{activeModel.name} / {activeModel.market}</p>
-              <h1>คู่มือออนไลน์สำหรับคนใช้ Nevo Q05</h1>
-              <p className="hero-summary">
-                รวบรวมรายละเอียดคู่มือการใช้งาน ทิปเทคนิคพิเศษ และปัญหาที่พบบ่อยพร้อมแนวทางแก้ไขในที่เดียว
-              </p>
+            <div className="dashboard-section-header" style={{ gridColumn: 'span 2' }}>
+              <p className="model-line">ระบบรถยนต์เบื้องต้น</p>
+              <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 10px', color: 'var(--text-strong)' }}>
+                สำรวจฟังก์ชันการทำงานหลัก (Interactive Visual Stage)
+              </h2>
             </div>
 
             <div className="visual-stage-container">
