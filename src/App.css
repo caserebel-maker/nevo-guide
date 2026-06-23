@@ -3431,18 +3431,34 @@ body {
 
 :root[data-theme="light"] .hero-banner {
   background:
-    linear-gradient(180deg, #eaf4ff 0%, #f6f9fd 100%);
+    linear-gradient(135deg, #0b3a78 0%, #0f7ed4 48%, #d8f1ff 100%);
 }
 
 :root[data-theme="light"] .hero-banner-img {
   opacity: 1;
-  filter: brightness(1.02) contrast(1.08) saturate(1.06);
+  filter: brightness(0.92) contrast(1.08) saturate(1.08);
 }
 
 :root[data-theme="light"] .hero-banner-overlay {
   background:
-    linear-gradient(90deg, rgba(246, 249, 253, 0.9) 0%, rgba(246, 249, 253, 0.42) 36%, rgba(246, 249, 253, 0) 64%),
-    linear-gradient(0deg, rgba(246, 249, 253, 0.92) 0%, rgba(246, 249, 253, 0) 28%);
+    linear-gradient(90deg, rgba(4, 25, 55, 0.9) 0%, rgba(12, 83, 154, 0.58) 38%, rgba(8, 126, 212, 0.16) 72%),
+    linear-gradient(0deg, rgba(4, 25, 55, 0.66) 0%, rgba(4, 25, 55, 0) 34%),
+    linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(37, 99, 235, 0.04) 60%);
+}
+
+:root[data-theme="light"] .hero-banner-tag {
+  color: #bfdbfe;
+}
+
+:root[data-theme="light"] .hero-banner-title,
+:root[data-theme="light"] .hero-banner-subtitle {
+  color: #ffffff;
+  text-shadow: 0 12px 32px rgba(2, 8, 23, 0.28);
+}
+
+:root[data-theme="light"] .hero-banner-desc {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 8px 24px rgba(2, 8, 23, 0.24);
 }
 
 :root[data-theme="light"] .main-search-box input::placeholder {
