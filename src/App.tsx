@@ -101,7 +101,15 @@ function App() {
     const savedItems = localStorage.getItem('nevo_q05_hub_items')
     if (savedItems) {
       try {
-        return JSON.parse(savedItems) as HubItem[]
+        const parsedItems = JSON.parse(savedItems) as HubItem[]
+        const missingInitialItems = initialHubItems.filter(
+          (initialItem) => !parsedItems.some((savedItem) => savedItem.id === initialItem.id),
+        )
+        const mergedItems = [...missingInitialItems, ...parsedItems]
+        if (missingInitialItems.length) {
+          localStorage.setItem('nevo_q05_hub_items', JSON.stringify(mergedItems))
+        }
+        return mergedItems
       } catch {
         return initialHubItems
       }
@@ -698,6 +706,7 @@ function App() {
                 filteredHubItems.map((item) => {
                   const isVoted = votedIds.includes(item.id)
                   const isWorkaroundOpen = openWorkaroundIds.includes(item.id)
+                  const itemImages = item.images ?? (item.image ? [item.image] : [])
                   return (
                     <article key={item.id} className={`hub-card type-${item.type}`}>
                       <header className="hub-card-header">
@@ -713,9 +722,16 @@ function App() {
                       <h3 className="hub-card-title">{item.title}</h3>
                       <p className="hub-card-desc">{item.description}</p>
 
-                      {item.image && (
-                        <div className="hub-card-image">
-                          <img src={item.image} alt={item.title} loading="lazy" />
+                      {itemImages.length > 0 && (
+                        <div className={`hub-card-image-grid ${itemImages.length > 1 ? 'has-multiple' : ''}`}>
+                          {itemImages.map((imageSrc, imageIndex) => (
+                            <img
+                              key={imageSrc}
+                              src={imageSrc}
+                              alt={`${item.title} รูปที่ ${imageIndex + 1}`}
+                              loading="lazy"
+                            />
+                          ))}
                         </div>
                       )}
 
@@ -1086,7 +1102,7 @@ function GuidebookPanel({
       title: item.title,
       body: `${item.description} ${item.solution ?? ''} ${item.author}`,
       meta: `${categoryLabels[item.category]} / ${item.type === 'tip' ? 'ทิปจากผู้ใช้' : 'ปัญหาที่พบ'}`,
-      image: item.image,
+      image: item.images?.[0] ?? item.image,
       action: () => document.getElementById('hub-section')?.scrollIntoView({ behavior: 'smooth' }),
     })),
   ]

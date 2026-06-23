@@ -308,9 +308,27 @@ export type HubItem = {
   author: string
   date: string
   image?: string // Base64 data URL or external image path
+  images?: string[]
 }
 
 export const initialHubItems: HubItem[] = [
+  {
+    id: 'hub-07',
+    type: 'issue',
+    category: 'charging',
+    title: 'ชาร์จ DC แล้วขึ้นแจ้งเตือนจำกัดกำลัง เครื่องเย็น/ระบบระบายความร้อนทำงานผิดปกติ',
+    description:
+      'เคสจากสมาชิกกลุ่ม: หลังชาร์จ DC จากแบตเตอรี่ประมาณ 13% ถึง 86% ที่สถานี EV One กำลังชาร์จอยู่ราว 112 kW หลังออกจากสถานีขณะขับไม่เกินประมาณ 40 km/h หน้าจอผู้ขับขึ้นแจ้งเตือนว่ากำลังเครื่องถูกจำกัด เหยียบคันเร่งแล้วรถไม่ขึ้นเหมือนปกติ และพบเสียงพัดลมแอร์/ระบบระบายความร้อนดังผิดปกติ ทั้งที่อุณหภูมิและระดับน้ำยา coolant ยังดูปกติ',
+    solution:
+      'แนวทางเบื้องต้นจากเคสนี้: โทรบริการฉุกเฉิน, จอดรถในจุดปลอดภัย, ดับเครื่องและรอ 10-15 นาทีแล้วลองเปิดระบบใหม่ หากแจ้งเตือนไม่หายหรือกำลังยังถูกจำกัด ให้หลีกเลี่ยงการขับต่อระยะไกลและประสานศูนย์บริการ/รถสไลด์เพื่อตรวจระบบระบายความร้อนของแบตเตอรี่และระบบขับเคลื่อน เนื่องจากอาจเกี่ยวกับการจัดการความร้อนหลังชาร์จเร็ว',
+    upvotes: 0,
+    author: 'Admin Paul',
+    date: '2026-06-23',
+    images: [
+      '/media/q05/defects/charging-limited-power-cluster.png',
+      '/media/q05/defects/charging-limited-power-report.png',
+    ],
+  },
   {
     id: 'hub-01',
     type: 'tip',
@@ -380,4 +398,3 @@ export const initialHubItems: HubItem[] = [
     image: 'https://www.changan.co.th/images/nevo/q05/gallery/pic-006.jpg',
   },
 ]
-
