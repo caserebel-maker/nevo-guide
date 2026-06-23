@@ -12,6 +12,8 @@
   --accent-glow: rgba(59, 130, 246, 0.25);
   --success: #10b981;
   --warning: #f59e0b;
+  --card-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+  --card-shadow-hover: 0 22px 52px rgba(0, 0, 0, 0.36);
 }
 
 /* Light Theme Variables Override */
@@ -27,6 +29,8 @@
   --accent-glow: rgba(37, 99, 235, 0.15);
   --success: #10b981;
   --warning: #d97706;
+  --card-shadow: 0 12px 32px rgba(15, 23, 42, 0.1), 0 2px 8px rgba(15, 23, 42, 0.05);
+  --card-shadow-hover: 0 20px 46px rgba(15, 23, 42, 0.16), 0 6px 16px rgba(15, 23, 42, 0.07);
 }
 
 * {
@@ -1045,6 +1049,7 @@ body {
   text-align: left;
   cursor: pointer;
   font: inherit;
+  box-shadow: var(--card-shadow);
   transition: all 0.2s ease;
 }
 
@@ -1052,6 +1057,8 @@ body {
 .screen-capture-card.is-active {
   border-color: rgba(47, 108, 255, 0.5);
   background: rgba(47, 108, 255, 0.1);
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
 }
 
 .screen-capture-card img {
@@ -1275,6 +1282,7 @@ body {
   background: rgba(255, 255, 255, 0.015);
   border: 1px solid var(--border-color);
   border-radius: 10px;
+  box-shadow: var(--card-shadow);
   transition: all 0.2s ease;
 }
 
@@ -1282,6 +1290,7 @@ body {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.12);
   transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .hub-card.type-tip {
@@ -2224,7 +2233,7 @@ body {
 :root[data-theme="light"] .hub-card {
   background: #ffffff;
   border-color: rgba(0, 0, 0, 0.06);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--card-shadow);
 }
 
 :root[data-theme="light"] .hub-card.type-tip {
@@ -2761,11 +2770,14 @@ body {
   cursor: pointer;
   font: inherit;
   overflow: hidden;
+  box-shadow: var(--card-shadow);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .guide-result-card:hover {
   border-color: rgba(37, 99, 235, 0.35);
   transform: translateY(-1px);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .guide-result-card img {
@@ -3299,11 +3311,16 @@ body {
   border: 1px solid var(--mock-border);
   background: rgba(255, 255, 255, 0.9);
   border-radius: 12px;
-  box-shadow: 0 10px 26px rgba(15, 31, 55, 0.11);
+  box-shadow: var(--card-shadow);
   color: #0f172a;
   cursor: pointer;
   font: inherit;
   text-align: left;
+}
+
+.hero-feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
 }
 
 :root[data-theme="dark"] .hero-feature-card,
@@ -3567,7 +3584,11 @@ body {
   overflow: hidden;
   border-radius: 8px;
   background: #020617;
-  box-shadow: 0 8px 20px rgba(15, 31, 55, 0.16);
+  box-shadow: var(--card-shadow);
+}
+
+.clip-preview-card:hover .clip-thumb {
+  box-shadow: var(--card-shadow-hover);
 }
 
 .clip-thumb img {
