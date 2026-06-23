@@ -5,9 +5,19 @@ import {
   ThumbsUp,
   Plus,
   AlertTriangle,
+  Bell,
+  BookOpen,
+  Bot,
+  Bookmark,
+  ClipboardList,
+  Globe2,
+  FileSearch,
+  MessageCircle,
+  PlayCircle,
   Sparkles,
   X,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Lightbulb,
   Info,
@@ -16,6 +26,7 @@ import {
   MonitorPlay,
   Sun,
   Moon,
+  UserCircle,
 } from 'lucide-react'
 import './App.css'
 import {
@@ -296,8 +307,11 @@ function App() {
       {/* Desktop Sidebar Navigation */}
       <aside className="sidebar-navigation">
         <div className="sidebar-brand">
-          <span className="brand-mark">N</span>
-          <strong>NEVO Q05 GUIDE</strong>
+          <span className="brand-mark brand-nevo">NEVO</span>
+          <span className="brand-copy">
+            <strong>Q05 Guide</strong>
+            <small>Owner e-guide</small>
+          </span>
         </div>
 
         <div className="sidebar-section">
@@ -339,8 +353,11 @@ function App() {
           <aside className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <header className="drawer-header">
               <div className="sidebar-brand">
-                <span className="brand-mark">N</span>
-                <strong>NEVO Q05 GUIDE</strong>
+                <span className="brand-mark brand-nevo">NEVO</span>
+                <span className="brand-copy">
+                  <strong>Q05 Guide</strong>
+                  <small>Owner e-guide</small>
+                </span>
               </div>
               <button type="button" className="close-drawer-btn" onClick={() => setIsMobileMenuOpen(false)}>
                 <X size={20} />
@@ -410,13 +427,35 @@ function App() {
           </button>
           
           <div className="mobile-brand-title">
-            <span className="brand-mark">N</span>
-            <strong>NEVO Q05 GUIDE</strong>
+            <span className="brand-mark brand-nevo">NEVO</span>
+            <strong>Q05 Guide</strong>
           </div>
 
           <div className="flex-grow" />
 
-          {/* Theme Switcher Button */}
+          <label className="main-search-box" aria-label="ค้นหาคู่มือ">
+            <Search size={16} />
+            <input
+              value={hubSearch}
+              onChange={(event) => setHubSearch(event.target.value)}
+              placeholder="ค้นหาในคู่มือ Q05 Guide"
+            />
+          </label>
+
+          <div className="topbar-actions">
+            <button type="button" className="topbar-icon-btn language-btn" title="ภาษาไทย">
+              <Globe2 size={18} />
+              <span>ไทย</span>
+              <ChevronDown size={14} />
+            </button>
+            <button type="button" className="topbar-icon-btn" title="การแจ้งเตือน">
+              <Bell size={18} />
+            </button>
+            <button type="button" className="topbar-icon-btn user-btn" title="โปรไฟล์">
+              <UserCircle size={22} />
+            </button>
+          </div>
+
           <button
             type="button"
             className="theme-switcher-btn"
@@ -426,44 +465,85 @@ function App() {
           >
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </button>
-
-          <label className="main-search-box" aria-label="ค้นหารูปภาพ">
-            <Search size={16} />
-            <input
-              value={hubSearch}
-              onChange={(event) => setHubSearch(event.target.value)}
-              placeholder="ค้นหาทิป, ปัญหา, ฟังก์ชัน..."
-            />
-          </label>
         </header>
 
         {/* Hero Banner Section */}
         <section className="hero-banner">
           <div className="hero-banner-overlay" />
           <img className="hero-banner-img" src={activeModel.images[0].src} alt={activeModel.name} />
-          <div className="hero-banner-content">
-            <span className="hero-banner-tag">{activeModel.name} / {activeModel.market}</span>
-            <h1 className="hero-banner-title">คู่มือออนไลน์สำหรับคนใช้ Nevo Q05</h1>
-            <p className="hero-banner-desc">
-              แหล่งรวบรวมข้อมูลอย่างเป็นทางการสำหรับผู้ใช้ NEVO Q05 พร้อมทิปเทคนิคพิเศษ แนะนำวิธีการใช้งาน และสรุปรายงานปัญหาที่พบจากผู้ใช้จริง
-            </p>
-            <div className="hero-banner-actions">
-              <a href="#manual-detail" className="hero-btn hero-btn-primary">
-                อ่านคู่มือการใช้งาน
-              </a>
-              <a href="#hub-section" className="hero-btn hero-btn-secondary">
-                คลังทิป & ปัญหาที่พบ
-              </a>
+          <div className="hero-composition">
+            <div className="hero-primary">
+              <div className="hero-banner-content">
+                <span className="hero-banner-tag">{activeModel.name} / {activeModel.market}</span>
+                <h1 className="hero-banner-title">NEVO Q05 Guide</h1>
+                <p className="hero-banner-subtitle">คู่มือออนไลน์สำหรับคนใช้ NEVO Q05</p>
+                <p className="hero-banner-desc">
+                  ค้นหาคู่มือการใช้งาน ฟีเจอร์รถยนต์ไฟฟ้า การชาร์จ การขับขี่ และเคล็ดลับจากชุมชนผู้ใช้จริง
+                </p>
+                <div className="hero-banner-actions">
+                  <a href="#guidebook" className="hero-btn hero-btn-primary">
+                    <BookOpen size={18} />
+                    เริ่มอ่านคู่มือ
+                  </a>
+                </div>
+              </div>
+
+              <div className="hero-feature-cards" aria-label="หมวดคู่มือยอดนิยม">
+                {activeModel.features.slice(1, 5).map((feature) => {
+                  const Icon = feature.icon
+                  return (
+                    <button
+                      key={feature.id}
+                      type="button"
+                      className="hero-feature-card"
+                      onClick={() => handleFeatureChange(feature.id)}
+                    >
+                      <Icon size={32} />
+                      <span>
+                        <strong>{feature.label}</strong>
+                        <small>{feature.summary}</small>
+                      </span>
+                      <ChevronRight size={20} />
+                    </button>
+                  )
+                })}
+              </div>
             </div>
+
+            <CommunitySpotlightPanel items={hubItems} onOpenHub={() => document.getElementById('hub-section')?.scrollIntoView({ behavior: 'smooth' })} />
           </div>
         </section>
 
         <div className="content-container">
+          <ClipPreviewStrip
+            captures={activeModel.screenCaptures.slice(0, 5)}
+            onSelect={(capture) => {
+              setActiveFeatureId(capture.featureId)
+              setSelectedImageId(capture.id)
+              document.getElementById('screen-captures')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          />
+
+          <GuidebookPanel
+            features={activeModel.features}
+            captures={activeModel.screenCaptures}
+            hubItems={hubItems}
+            searchQuery={hubSearch}
+            categoryLabels={categoryLabels}
+            onSearchChange={setHubSearch}
+            onFeatureSelect={handleFeatureChange}
+            onCaptureSelect={(capture) => {
+              setActiveFeatureId(capture.featureId)
+              setSelectedImageId(capture.id)
+              document.getElementById('screen-captures')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          />
+
           <section className="dashboard-grid" id="top">
-            <div className="dashboard-section-header" style={{ gridColumn: 'span 2' }}>
-              <p className="model-line">ระบบรถยนต์เบื้องต้น</p>
-              <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 10px', color: 'var(--text-strong)' }}>
-                สำรวจฟังก์ชันการทำงานหลัก (Interactive Visual Stage)
+            <div className="dashboard-section-header">
+              <p className="model-line">Official Q05 Visual</p>
+              <h2>
+                สำรวจฟังก์ชันหลักจากภาพ NEVO Q05 รุ่นไทย
               </h2>
             </div>
 
@@ -879,6 +959,214 @@ function ModelSelect({ activeModelId, onChange }: ModelSelectProps) {
   )
 }
 
+type CommunitySpotlightPanelProps = {
+  items: HubItem[]
+  onOpenHub: () => void
+}
+
+function CommunitySpotlightPanel({ items, onOpenHub }: CommunitySpotlightPanelProps) {
+  const spotlightItems = [...items].sort((a, b) => b.upvotes - a.upvotes).slice(0, 5)
+
+  return (
+    <aside className="community-spotlight-panel" aria-label="คลังทิปและปัญหาที่พบ">
+      <header>
+        <div>
+          <h2>คลังทิป & ปัญหาที่พบ</h2>
+          <span>ยอดนิยมจากชุมชน</span>
+        </div>
+        <button type="button" onClick={onOpenHub}>ดูทั้งหมด</button>
+      </header>
+
+      <div className="spotlight-tabs" aria-hidden="true">
+        <span className="is-active">ยอดนิยม</span>
+        <span>ล่าสุด</span>
+        <span>ยังไม่ได้ตอบ</span>
+      </div>
+
+      <div className="spotlight-list">
+        {spotlightItems.map((item) => (
+          <button key={item.id} type="button" className="spotlight-item" onClick={onOpenHub}>
+            <span className="spotlight-avatar">{item.author.slice(0, 1).toUpperCase()}</span>
+            <span className="spotlight-copy">
+              <strong>{item.title}</strong>
+              <small>{item.author} · {item.date}</small>
+            </span>
+            <span className="spotlight-score">
+              <ChevronUp size={14} />
+              {item.upvotes}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <button type="button" className="spotlight-new-post" onClick={onOpenHub}>
+        <MessageCircle size={18} />
+        ตั้งคำถามหรือแบ่งปันทิป
+      </button>
+    </aside>
+  )
+}
+
+type ClipPreviewStripProps = {
+  captures: ScreenCapture[]
+  onSelect: (capture: ScreenCapture) => void
+}
+
+function ClipPreviewStrip({ captures, onSelect }: ClipPreviewStripProps) {
+  return (
+    <section className="clip-preview-section" aria-label="ภาพเมนูจากคลิป">
+      <header className="clip-preview-header">
+        <h2>ภาพเมนูจากคลิป</h2>
+        <a href="#screen-captures">ดูทั้งหมด</a>
+      </header>
+      <div className="clip-preview-row">
+        {captures.map((capture, index) => (
+          <button key={capture.id} type="button" className="clip-preview-card" onClick={() => onSelect(capture)}>
+            <span className="clip-thumb">
+              <img src={capture.src} alt={capture.alt} loading="lazy" />
+              <small>{index === 0 ? '02:31' : index === 1 ? '03:15' : index === 2 ? '02:48' : index === 3 ? '02:10' : '03:05'}</small>
+              <PlayCircle size={34} />
+            </span>
+            <strong>{capture.title}</strong>
+            <span>{capture.note}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+type GuidebookPanelProps = {
+  features: typeof models[number]['features']
+  captures: ScreenCapture[]
+  hubItems: HubItem[]
+  searchQuery: string
+  categoryLabels: Record<FeatureId, string>
+  onSearchChange: (value: string) => void
+  onFeatureSelect: (featureId: FeatureId) => void
+  onCaptureSelect: (capture: ScreenCapture) => void
+}
+
+function GuidebookPanel({
+  features,
+  captures,
+  hubItems,
+  searchQuery,
+  categoryLabels,
+  onSearchChange,
+  onFeatureSelect,
+  onCaptureSelect,
+}: GuidebookPanelProps) {
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const guideRows = [
+    ...features.map((feature) => ({
+      id: `feature-${feature.id}`,
+      type: 'manual' as const,
+      category: feature.id,
+      title: feature.title,
+      body: `${feature.summary} ${feature.facts.join(' ')}`,
+      meta: `${feature.label} / คู่มือหลัก`,
+      image: feature.image.src,
+      action: () => onFeatureSelect(feature.id),
+    })),
+    ...captures.map((capture) => ({
+      id: `capture-${capture.id}`,
+      type: 'capture' as const,
+      category: capture.featureId,
+      title: capture.title,
+      body: `${capture.note} ${capture.sourceVideo}`,
+      meta: `${categoryLabels[capture.featureId]} / ภาพเมนูจากคลิป`,
+      image: capture.src,
+      action: () => onCaptureSelect(capture),
+    })),
+    ...hubItems.map((item) => ({
+      id: `hub-${item.id}`,
+      type: item.type,
+      category: item.category,
+      title: item.title,
+      body: `${item.description} ${item.solution ?? ''} ${item.author}`,
+      meta: `${categoryLabels[item.category]} / ${item.type === 'tip' ? 'ทิปจากผู้ใช้' : 'ปัญหาที่พบ'}`,
+      image: item.image,
+      action: () => document.getElementById('hub-section')?.scrollIntoView({ behavior: 'smooth' }),
+    })),
+  ]
+
+  const results = normalizedQuery
+    ? guideRows.filter((row) => {
+        const haystack = `${row.title} ${row.body} ${row.meta}`.toLowerCase()
+        return haystack.includes(normalizedQuery)
+      }).slice(0, 6)
+    : guideRows.filter((row) => row.type === 'manual').slice(0, 6)
+
+  return (
+    <section className="guidebook-section" id="guidebook">
+      <div className="guidebook-header">
+        <div>
+          <p className="model-line">Phase 1 / Owner e-guide book</p>
+          <h2>ค้นหาและอ่านคู่มือ NEVO Q05 แบบเป็นหมวด</h2>
+          <p>
+            เริ่มจากฐานความรู้ที่ค้นง่ายก่อน: หัวข้อคู่มือ ภาพเมนูจากคลิป และทิปจากผู้ใช้จะถูกมัดรวมเป็นคลังเดียว พร้อมต่อยอดไป OCR คู่มือจริงและ chatbot ภายหลัง
+          </p>
+        </div>
+        <div className="assistant-preview">
+          <Bot size={18} />
+          <span>
+            <strong>Manual assistant ready</strong>
+            <small>ตอนนี้เป็น search assistant แบบไม่เสียค่า API</small>
+          </span>
+        </div>
+      </div>
+
+      <div className="guide-search-panel">
+        <label className="guide-search-box" aria-label="ค้นหาคู่มือ NEVO Q05">
+          <FileSearch size={18} />
+          <input
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="ลองค้นหา: ชาร์จ, CarPlay, กล้อง 360, Odo, OTA..."
+          />
+        </label>
+        {searchQuery && (
+          <button type="button" className="guide-clear-btn" onClick={() => onSearchChange('')}>
+            ล้างคำค้น
+          </button>
+        )}
+      </div>
+
+      <div className="guide-result-grid">
+        {results.map((row) => (
+          <button key={row.id} type="button" className={`guide-result-card type-${row.type}`} onClick={row.action}>
+            {row.image && <img src={row.image} alt="" loading="lazy" />}
+            <span className="guide-result-copy">
+              <small>{row.meta}</small>
+              <strong>{row.title}</strong>
+              <span>{row.body}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="phase-roadmap">
+        <article>
+          <ClipboardList size={18} />
+          <strong>1. จัดหมวดคู่มือ</strong>
+          <span>เนื้อหาสำคัญถูกแยกเป็นหมวดที่คนใช้รถเปิดหาได้เร็ว</span>
+        </article>
+        <article>
+          <Bookmark size={18} />
+          <strong>2. เก็บภาพหน้าคู่มือจริง</strong>
+          <span>รองรับการเพิ่ม OCR จากภาพที่ถ่ายเองในเฟสต่อไป</span>
+        </article>
+        <article>
+          <Bot size={18} />
+          <strong>3. ต่อยอดถามตอบ</strong>
+          <span>เริ่มจากค้นฟรีก่อน แล้วค่อยต่อ AI เมื่อฐานข้อมูลพร้อม</span>
+        </article>
+      </div>
+    </section>
+  )
+}
+
 type ScreenCapturePanelProps = {
   captures: ScreenCapture[]
   activeFeatureLabel: string
@@ -888,7 +1176,7 @@ type ScreenCapturePanelProps = {
 
 function ScreenCapturePanel({ captures, activeFeatureLabel, selectedImage, onSelect }: ScreenCapturePanelProps) {
   return (
-    <section className="screen-capture-section">
+    <section className="screen-capture-section" id="screen-captures">
       <div className="screen-capture-header">
         <div>
           <p className="model-line">ภาพนิ่งจากคลิปคู่มือ</p>
