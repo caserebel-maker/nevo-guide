@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import {
-  Check,
   Search,
   ThumbsUp,
   Plus,
@@ -563,81 +562,6 @@ function App() {
             }}
           />
 
-          <section className="dashboard-grid" id="top">
-            <div className="dashboard-section-header">
-              <p className="model-line">Official Q05 Visual</p>
-              <h2>
-                สำรวจฟังก์ชันหลักจากภาพ NEVO Q05 รุ่นไทย
-              </h2>
-            </div>
-
-            <div className="visual-stage-container">
-              <VisualStage
-                image={selectedImage}
-                activeFeatureId={activeFeatureId}
-                onFeatureChange={handleFeatureChange}
-              />
-            </div>
-
-            <aside className="spec-panel-dashboard">
-              <div className="trim-label-dashboard">สเปกเด่น (Thai Market)</div>
-              {activeModel.specs.map((spec) => (
-                <div className="spec-row-dashboard" key={spec.label}>
-                  <span>{spec.label}</span>
-                  <strong>{spec.value}</strong>
-                </div>
-              ))}
-            </aside>
-          </section>
-
-          {/* Interactive Manual Detail Panel */}
-          <section className="manual-detail-section" id="manual-detail">
-            <div className="manual-detail-panel">
-              <div className="manual-detail-image">
-                <img src={activeFeature.image.src} alt={activeFeature.image.alt} />
-              </div>
-              <div className="manual-detail-copy">
-                <p className="category-name">{activeFeature.label}</p>
-                <h2>{activeFeature.title}</h2>
-                <p>{activeFeature.summary}</p>
-                <div className="fact-list">
-                  {activeFeature.facts.map((fact) => (
-                    <span key={fact}>
-                      <Check size={15} />
-                      {fact}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Embedded Color Selector inside "Exterior (ภายนอก)" category */}
-            {activeFeatureId === 'exterior' && (
-              <div className="embedded-color-strip">
-                <header className="color-strip-header">
-                  <p className="model-line">สีที่แสดงบนหน้า CHANGAN Thailand</p>
-                  <h2>เลือกสีตัวรถ (Official Colors)</h2>
-                </header>
-                <div className="color-list-embedded">
-                  {activeModel.colors.map((color) => (
-                    <button
-                      key={color.label}
-                      type="button"
-                      className={`color-chip-embedded ${selectedImage.id === color.image.id ? 'is-active' : ''}`}
-                      onClick={() => setSelectedImageId(color.image.id)}
-                    >
-                      <span style={{ background: color.swatch }} />
-                      <div className="color-chip-text">
-                        <strong>{color.label}</strong>
-                        <small>{color.thai}</small>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-
           <ScreenCapturePanel
             captures={screenCaptures}
             activeFeatureLabel={activeFeature.label}
@@ -1118,12 +1042,6 @@ function ImagePreviewModal({ image, onClose }: ImagePreviewModalProps) {
   )
 }
 
-type VisualStageProps = {
-  image?: ImageAsset
-  activeFeatureId: FeatureId
-  onFeatureChange: (featureId: FeatureId) => void
-}
-
 type ModelSelectProps = {
   activeModelId: ModelId
   onChange: (modelId: ModelId) => void
@@ -1396,38 +1314,6 @@ function ScreenCapturePanel({ captures, activeFeatureLabel, selectedImage, onSel
         </p>
       )}
     </section>
-  )
-}
-
-function VisualStage({ image, activeFeatureId, onFeatureChange }: VisualStageProps) {
-  const hotspots: Array<{ id: FeatureId; label: string; x: number; y: number }> = [
-    { id: 'screen', label: 'หน้าจอ', x: 50, y: 48 },
-    { id: 'comfort', label: 'ห้องโดยสาร', x: 39, y: 55 },
-    { id: 'charging', label: 'ชาร์จ', x: 76, y: 63 },
-    { id: 'exterior', label: 'ภายนอก', x: 25, y: 62 },
-    { id: 'safety', label: 'Safety', x: 64, y: 35 },
-  ]
-
-  return (
-    <div className="viewer-panel visual-stage">
-      {image ? <img className="stage-image" src={image.src} alt={image.alt} /> : null}
-      <div className="stage-caption">
-        <strong>{image?.title}</strong>
-        <span>{image?.kind === 'capture' ? 'ภาพนิ่งจากคลิปคู่มือที่คัดแยกไว้' : 'ภาพตลาดไทยจาก CHANGAN Thailand'}</span>
-      </div>
-      {hotspots.map((hotspot) => (
-        <button
-          key={hotspot.id}
-          type="button"
-          className={`part-marker ${activeFeatureId === hotspot.id ? 'is-active' : ''}`}
-          style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
-          onClick={() => onFeatureChange(hotspot.id)}
-        >
-          <span />
-          {hotspot.label}
-        </button>
-      ))}
-    </div>
   )
 }
 
