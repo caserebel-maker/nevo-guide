@@ -26,6 +26,9 @@ import {
   Sun,
   Moon,
   UserCircle,
+  LogOut,
+  ShieldCheck,
+  Trash2,
 } from 'lucide-react'
 import './App.css'
 import {
@@ -77,6 +80,9 @@ const compressImage = (file: File): Promise<string> => {
     reader.onerror = (err) => reject(err)
   })
 }
+
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? ''
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? ''
 
 function App() {
   const [activeModelId, setActiveModelId] = useState<ModelId>('q05')
@@ -130,6 +136,13 @@ function App() {
   const [hubCatFilter, setHubCatFilter] = useState<string>('all')
   const [selectedHubItem, setSelectedHubItem] = useState<HubItem | null>(null)
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    return localStorage.getItem('nevo_q05_admin_session') === 'active'
+  })
+  const [adminEmail, setAdminEmail] = useState(ADMIN_EMAIL)
+  const [adminPassword, setAdminPassword] = useState('')
+  const [adminError, setAdminError] = useState('')
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [openWorkaroundIds, setOpenWorkaroundIds] = useState<string[]>([])
@@ -230,6 +243,44 @@ function App() {
     })
     setHubItems(nextItems)
     localStorage.setItem('nevo_q05_hub_items', JSON.stringify(nextItems))
+  }
+
+  const handleAdminLogin = (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+      setAdminError('ยังไม่ได้ตั้งค่า Admin email/password ใน environment')
+      return
+    }
+
+    if (adminEmail.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase() || adminPassword !== ADMIN_PASSWORD) {
+      setAdminError('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
+      return
+    }
+
+    localStorage.setItem('nevo_q05_admin_session', 'active')
+    setIsAdminAuthenticated(true)
+    setAdminPassword('')
+    setAdminError('')
+    setIsAdminLoginOpen(false)
+  }
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem('nevo_q05_admin_session')
+    setIsAdminAuthenticated(false)
+    setAdminPassword('')
+    setAdminError('')
+  }
+
+  const handleDeleteHubItem = (id: string) => {
+    const targetItem = hubItems.find((item) => item.id === id)
+    if (!targetItem) return
+    const confirmed = window.confirm(`ลบโพสต์ "${targetItem.title}" ใช่ไหม?`)
+    if (!confirmed) return
+
+    const nextItems = hubItems.filter((item) => item.id !== id)
+    setHubItems(nextItems)
+    localStorage.setItem('nevo_q05_hub_items', JSON.stringify(nextItems))
+    setSelectedHubItem(null)
   }
 
   const toggleWorkaround = (id: string) => {
@@ -466,6 +517,12 @@ function App() {
           </label>
 
           <div className="topbar-actions">
+            {isAdminAuthenticated && (
+              <span className="admin-session-pill">
+                <ShieldCheck size={15} />
+                Admin Paul
+              </span>
+            )}
             <button type="button" className="topbar-icon-btn language-btn" title="ภาษาไทย">
               <Globe2 size={18} />
               <span>ไทย</span>
@@ -474,8 +531,13 @@ function App() {
             <button type="button" className="topbar-icon-btn" title="การแจ้งเตือน">
               <Bell size={18} />
             </button>
-            <button type="button" className="topbar-icon-btn user-btn" title="โปรไฟล์">
-              <UserCircle size={22} />
+            <button
+              type="button"
+              className="topbar-icon-btn user-btn"
+              title={isAdminAuthenticated ? 'ออกจากระบบแอดมิน' : 'เข้าสู่ระบบแอดมิน'}
+              onClick={isAdminAuthenticated ? handleAdminLogout : () => setIsAdminLoginOpen(true)}
+            >
+              {isAdminAuthenticated ? <LogOut size={20} /> : <UserCircle size={22} />}
             </button>
           </div>
 
@@ -666,9 +728,25 @@ function App() {
                           {item.type === 'tip' ? <Lightbulb size={12} /> : <AlertTriangle size={12} />}
                           {item.type === 'tip' ? 'ทริคแนะนำ' : 'ปัญหาที่พบ'}
                         </span>
-                        <span className="badge-cat">
-                          {categoryLabels[item.category] || item.category}
-                        </span>
+                        <div className="hub-card-admin-row">
+                          <span className="badge-cat">
+                            {categoryLabels[item.category] || item.category}
+                          </span>
+                          {isAdminAuthenticated && (
+                            <button
+                              type="button"
+                              className="admin-delete-btn compact"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleDeleteHubItem(item.id)
+                              }}
+                              aria-label={`ลบโพสต์ ${item.title}`}
+                              title="ลบโพสต์"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
                       </header>
                       
                       <h3 className="hub-card-title">{item.title}</h3>
@@ -746,6 +824,22 @@ function App() {
           </section>
         </div>
       </div>
+
+      {isAdminLoginOpen && (
+        <AdminLoginModal
+          email={adminEmail}
+          password={adminPassword}
+          error={adminError}
+          onEmailChange={setAdminEmail}
+          onPasswordChange={setAdminPassword}
+          onClose={() => {
+            setIsAdminLoginOpen(false)
+            setAdminError('')
+            setAdminPassword('')
+          }}
+          onSubmit={handleAdminLogin}
+        />
+      )}
 
       {/* Submit Modal */}
       {isModalOpen && (
@@ -918,6 +1012,8 @@ function App() {
           onVote={() => handleVote(selectedHubItem.id)}
           onToggleWorkaround={() => toggleWorkaround(selectedHubItem.id)}
           onImageOpen={(src, alt) => setPreviewImage({ src, alt })}
+          isAdmin={isAdminAuthenticated}
+          onDelete={() => handleDeleteHubItem(selectedHubItem.id)}
         />
       )}
 
@@ -931,6 +1027,90 @@ function App() {
   )
 }
 
+type AdminLoginModalProps = {
+  email: string
+  password: string
+  error: string
+  onEmailChange: (value: string) => void
+  onPasswordChange: (value: string) => void
+  onClose: () => void
+  onSubmit: (event: React.FormEvent) => void
+}
+
+function AdminLoginModal({
+  email,
+  password,
+  error,
+  onEmailChange,
+  onPasswordChange,
+  onClose,
+  onSubmit,
+}: AdminLoginModalProps) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-container admin-login-modal" onClick={(event) => event.stopPropagation()}>
+        <header className="modal-header">
+          <div className="admin-login-title">
+            <ShieldCheck size={18} />
+            <h3>เข้าสู่ระบบ Admin</h3>
+          </div>
+          <button type="button" className="close-modal-btn" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </header>
+
+        <form className="modal-form" onSubmit={onSubmit}>
+          <p className="admin-login-note">
+            สำหรับ Admin Paul เพื่อจัดการโพสต์ในคลังทิปและปัญหาที่พบ
+          </p>
+
+          {error && (
+            <div className="form-error-msg">
+              <AlertTriangle size={15} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="admin-email" className="form-label">อีเมล</label>
+            <input
+              id="admin-email"
+              type="email"
+              value={email}
+              onChange={(event) => onEmailChange(event.target.value)}
+              className="form-input"
+              autoComplete="username"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="admin-password" className="form-label">รหัสผ่าน</label>
+            <input
+              id="admin-password"
+              type="password"
+              value={password}
+              onChange={(event) => onPasswordChange(event.target.value)}
+              className="form-input"
+              autoComplete="current-password"
+              required
+            />
+          </div>
+
+          <footer className="form-actions-row">
+            <button type="button" className="cancel-btn" onClick={onClose}>
+              ยกเลิก
+            </button>
+            <button type="submit" className="submit-btn">
+              เข้าสู่ระบบ
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 type HubItemModalProps = {
   item: HubItem
   categoryLabel: string
@@ -940,6 +1120,8 @@ type HubItemModalProps = {
   onVote: () => void
   onToggleWorkaround: () => void
   onImageOpen: (src: string, alt: string) => void
+  isAdmin: boolean
+  onDelete: () => void
 }
 
 function HubItemModal({
@@ -951,6 +1133,8 @@ function HubItemModal({
   onVote,
   onToggleWorkaround,
   onImageOpen,
+  isAdmin,
+  onDelete,
 }: HubItemModalProps) {
   const itemImages = item.images ?? (item.image ? [item.image] : [])
 
@@ -998,10 +1182,18 @@ function HubItemModal({
                 <span className="meta-author">โดย: {item.author}</span>
                 <span className="meta-date">{item.date}</span>
               </div>
-              <button type="button" className={`vote-btn ${isVoted ? 'is-voted' : ''}`} onClick={onVote}>
-                <ThumbsUp size={14} />
-                <span>{item.upvotes} {isVoted ? 'ขอบคุณ' : 'มีประโยชน์'}</span>
-              </button>
+              <div className="hub-detail-actions">
+                {isAdmin && (
+                  <button type="button" className="admin-delete-btn" onClick={onDelete}>
+                    <Trash2 size={14} />
+                    ลบโพสต์
+                  </button>
+                )}
+                <button type="button" className={`vote-btn ${isVoted ? 'is-voted' : ''}`} onClick={onVote}>
+                  <ThumbsUp size={14} />
+                  <span>{item.upvotes} {isVoted ? 'ขอบคุณ' : 'มีประโยชน์'}</span>
+                </button>
+              </div>
             </footer>
           </section>
 
