@@ -129,6 +129,8 @@ function App() {
   const [hubSearch, setHubSearch] = useState('')
   const [hubTypeFilter, setHubTypeFilter] = useState<'all' | 'tip' | 'issue'>('all')
   const [hubCatFilter, setHubCatFilter] = useState<string>('all')
+  const [selectedHubItem, setSelectedHubItem] = useState<HubItem | null>(null)
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [openWorkaroundIds, setOpenWorkaroundIds] = useState<string[]>([])
@@ -158,6 +160,20 @@ function App() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    if (!selectedHubItem && !previewImage) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (previewImage) {
+        setPreviewImage(null)
+        return
+      }
+      setSelectedHubItem(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [previewImage, selectedHubItem])
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
@@ -708,7 +724,19 @@ function App() {
                   const isWorkaroundOpen = openWorkaroundIds.includes(item.id)
                   const itemImages = item.images ?? (item.image ? [item.image] : [])
                   return (
-                    <article key={item.id} className={`hub-card type-${item.type}`}>
+                    <article
+                      key={item.id}
+                      className={`hub-card type-${item.type}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedHubItem(item)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          setSelectedHubItem(item)
+                        }
+                      }}
+                    >
                       <header className="hub-card-header">
                         <span className={`badge-type ${item.type}`}>
                           {item.type === 'tip' ? <Lightbulb size={12} /> : <AlertTriangle size={12} />}
@@ -730,6 +758,10 @@ function App() {
                               src={imageSrc}
                               alt={`${item.title} รูปที่ ${imageIndex + 1}`}
                               loading="lazy"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                setPreviewImage({ src: imageSrc, alt: `${item.title} รูปที่ ${imageIndex + 1}` })
+                              }}
                             />
                           ))}
                         </div>
@@ -740,7 +772,10 @@ function App() {
                           <button
                             type="button"
                             className={`workaround-toggle-btn ${isWorkaroundOpen ? 'is-open' : ''}`}
-                            onClick={() => toggleWorkaround(item.id)}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              toggleWorkaround(item.id)
+                            }}
                           >
                             <span>แนวทางแก้ไข / วิธีแก้เบื้องต้น</span>
                             {isWorkaroundOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -763,7 +798,10 @@ function App() {
                         <button
                           type="button"
                           className={`vote-btn ${isVoted ? 'is-voted' : ''}`}
-                          onClick={() => handleVote(item.id)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleVote(item.id)
+                          }}
                           title={isVoted ? 'โหวตแล้ว' : 'คิดว่ามีประโยชน์'}
                         >
                           <ThumbsUp size={13} />
@@ -945,6 +983,137 @@ function App() {
           </div>
         </div>
       )}
+
+      {selectedHubItem && (
+        <HubItemModal
+          item={selectedHubItem}
+          categoryLabel={categoryLabels[selectedHubItem.category] || selectedHubItem.category}
+          isVoted={votedIds.includes(selectedHubItem.id)}
+          isWorkaroundOpen={openWorkaroundIds.includes(selectedHubItem.id)}
+          onClose={() => setSelectedHubItem(null)}
+          onVote={() => handleVote(selectedHubItem.id)}
+          onToggleWorkaround={() => toggleWorkaround(selectedHubItem.id)}
+          onImageOpen={(src, alt) => setPreviewImage({ src, alt })}
+        />
+      )}
+
+      {previewImage && (
+        <ImagePreviewModal
+          image={previewImage}
+          onClose={() => setPreviewImage(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+type HubItemModalProps = {
+  item: HubItem
+  categoryLabel: string
+  isVoted: boolean
+  isWorkaroundOpen: boolean
+  onClose: () => void
+  onVote: () => void
+  onToggleWorkaround: () => void
+  onImageOpen: (src: string, alt: string) => void
+}
+
+function HubItemModal({
+  item,
+  categoryLabel,
+  isVoted,
+  isWorkaroundOpen,
+  onClose,
+  onVote,
+  onToggleWorkaround,
+  onImageOpen,
+}: HubItemModalProps) {
+  const itemImages = item.images ?? (item.image ? [item.image] : [])
+
+  return (
+    <div className="hub-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="hub-detail-title">
+      <article className={`hub-detail-modal type-${item.type}`}>
+        <header className="hub-detail-header">
+          <div className="hub-detail-badges">
+            <span className={`badge-type ${item.type}`}>
+              {item.type === 'tip' ? <Lightbulb size={12} /> : <AlertTriangle size={12} />}
+              {item.type === 'tip' ? 'ทริคแนะนำ' : 'ปัญหาที่พบ'}
+            </span>
+            <span className="badge-cat">{categoryLabel}</span>
+          </div>
+          <button type="button" className="hub-detail-close" onClick={onClose} aria-label="ปิดรายละเอียด">
+            <X size={22} />
+          </button>
+        </header>
+
+        <div className="hub-detail-body">
+          <section className="hub-detail-copy">
+            <h2 id="hub-detail-title">{item.title}</h2>
+            <p>{item.description}</p>
+
+            {item.solution && (
+              <div className="hub-detail-workaround">
+                <button
+                  type="button"
+                  className={`workaround-toggle-btn ${isWorkaroundOpen ? 'is-open' : ''}`}
+                  onClick={onToggleWorkaround}
+                >
+                  <span>แนวทางแก้ไข / วิธีแก้เบื้องต้น</span>
+                  {isWorkaroundOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                {isWorkaroundOpen && (
+                  <div className="workaround-content animate-fade-slide">
+                    <p>{item.solution}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <footer className="hub-detail-footer">
+              <div className="hub-card-meta">
+                <span className="meta-author">โดย: {item.author}</span>
+                <span className="meta-date">{item.date}</span>
+              </div>
+              <button type="button" className={`vote-btn ${isVoted ? 'is-voted' : ''}`} onClick={onVote}>
+                <ThumbsUp size={14} />
+                <span>{item.upvotes} {isVoted ? 'ขอบคุณ' : 'มีประโยชน์'}</span>
+              </button>
+            </footer>
+          </section>
+
+          {itemImages.length > 0 && (
+            <section className="hub-detail-gallery" aria-label="รูปแนบของเคสนี้">
+              {itemImages.map((imageSrc, imageIndex) => (
+                <button
+                  key={imageSrc}
+                  type="button"
+                  className="hub-detail-image"
+                  onClick={() => onImageOpen(imageSrc, `${item.title} รูปที่ ${imageIndex + 1}`)}
+                >
+                  <img src={imageSrc} alt={`${item.title} รูปที่ ${imageIndex + 1}`} />
+                  <span>ดูรูปใหญ่</span>
+                </button>
+              ))}
+            </section>
+          )}
+        </div>
+      </article>
+    </div>
+  )
+}
+
+type ImagePreviewModalProps = {
+  image: { src: string; alt: string }
+  onClose: () => void
+}
+
+function ImagePreviewModal({ image, onClose }: ImagePreviewModalProps) {
+  return (
+    <div className="image-preview-overlay" role="dialog" aria-modal="true" aria-label="ดูรูปขนาดใหญ่">
+      <button type="button" className="image-preview-close" onClick={onClose} aria-label="ปิดรูปภาพ">
+        <X size={24} />
+      </button>
+      <img src={image.src} alt={image.alt} />
     </div>
   )
 }
