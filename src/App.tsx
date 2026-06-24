@@ -29,6 +29,7 @@ import {
   LogOut,
   ShieldCheck,
   Trash2,
+  type LucideIcon,
 } from 'lucide-react'
 import './App.css'
 import {
@@ -107,11 +108,23 @@ function App() {
     if (savedItems) {
       try {
         const parsedItems = JSON.parse(savedItems) as HubItem[]
-        const missingInitialItems = initialHubItems.filter(
-          (initialItem) => !parsedItems.some((savedItem) => savedItem.id === initialItem.id),
-        )
-        const mergedItems = [...missingInitialItems, ...parsedItems]
-        if (missingInitialItems.length) {
+        const seedById = new Map(initialHubItems.map((item) => [item.id, item]))
+        const syncedItems = parsedItems.map((item) => {
+          const seedItem = seedById.get(item.id)
+          if (!seedItem) return item
+          return {
+            ...seedItem,
+            upvotes: item.upvotes ?? seedItem.upvotes,
+            image: item.image ?? seedItem.image,
+            video: item.video ?? seedItem.video,
+          }
+        })
+        const savedIds = new Set(syncedItems.map((item) => item.id))
+        const newSeedItems = initialHubItems.filter((item) => !savedIds.has(item.id))
+        const mergedItems = [...newSeedItems, ...syncedItems]
+        if (newSeedItems.length) {
+          localStorage.setItem('nevo_q05_hub_items', JSON.stringify(mergedItems))
+        } else if (JSON.stringify(mergedItems) !== JSON.stringify(parsedItems)) {
           localStorage.setItem('nevo_q05_hub_items', JSON.stringify(mergedItems))
         }
         return mergedItems
@@ -769,6 +782,12 @@ function App() {
                         </div>
                       )}
 
+                      {item.video && (
+                        <div className="hub-card-video">
+                          <video src={item.video} controls preload="metadata" playsInline />
+                        </div>
+                      )}
+
                       {item.solution && (
                         <div className="workaround-section">
                           <button
@@ -1197,8 +1216,13 @@ function HubItemModal({
             </footer>
           </section>
 
-          {itemImages.length > 0 && (
-            <section className="hub-detail-gallery" aria-label="รูปแนบของเคสนี้">
+          {(itemImages.length > 0 || item.video) && (
+            <section className="hub-detail-gallery" aria-label="สื่อแนบของเคสนี้">
+              {item.video && (
+                <div className="hub-detail-video">
+                  <video src={item.video} controls preload="metadata" playsInline />
+                </div>
+              )}
               {itemImages.map((imageSrc, imageIndex) => (
                 <button
                   key={imageSrc}
@@ -1353,6 +1377,17 @@ function GuidebookPanel({
   onCaptureSelect,
 }: GuidebookPanelProps) {
   const normalizedQuery = searchQuery.trim().toLowerCase()
+  const toneByCategory: Record<FeatureId, string> = {
+    overview: 'sky',
+    screen: 'blue',
+    drive: 'emerald',
+    comfort: 'rose',
+    safety: 'slate',
+    charging: 'violet',
+    exterior: 'cyan',
+    care: 'amber',
+  }
+
   const guideRows = [
     ...features.map((feature) => ({
       id: `feature-${feature.id}`,
@@ -1361,7 +1396,8 @@ function GuidebookPanel({
       title: feature.title,
       body: `${feature.summary} ${feature.facts.join(' ')}`,
       meta: `${feature.label} / คู่มือหลัก`,
-      image: feature.image.src,
+      icon: feature.icon,
+      tone: toneByCategory[feature.id],
       action: () => onFeatureSelect(feature.id),
     })),
     ...captures.map((capture) => ({
@@ -1371,7 +1407,8 @@ function GuidebookPanel({
       title: capture.title,
       body: `${capture.note} ${capture.sourceVideo}`,
       meta: `${categoryLabels[capture.featureId]} / ภาพเมนูจากคลิป`,
-      image: capture.src,
+      icon: MonitorPlay,
+      tone: toneByCategory[capture.featureId],
       action: () => onCaptureSelect(capture),
     })),
     ...hubItems.map((item) => ({
@@ -1381,7 +1418,8 @@ function GuidebookPanel({
       title: item.title,
       body: `${item.description} ${item.solution ?? ''} ${item.author}`,
       meta: `${categoryLabels[item.category]} / ${item.type === 'tip' ? 'ทิปจากผู้ใช้' : 'ปัญหาที่พบ'}`,
-      image: item.images?.[0] ?? item.image,
+      icon: item.type === 'tip' ? Lightbulb : AlertTriangle,
+      tone: item.type === 'tip' ? 'lime' : 'orange',
       action: () => document.getElementById('hub-section')?.scrollIntoView({ behavior: 'smooth' }),
     })),
   ]
@@ -1429,16 +1467,26 @@ function GuidebookPanel({
       </div>
 
       <div className="guide-result-grid">
-        {results.map((row) => (
-          <button key={row.id} type="button" className={`guide-result-card type-${row.type}`} onClick={row.action}>
-            {row.image && <img src={row.image} alt="" loading="lazy" />}
+        {results.map((row) => {
+          const Icon = row.icon as LucideIcon
+          return (
+          <button
+            key={row.id}
+            type="button"
+            className={`guide-result-card type-${row.type} tone-${row.tone}`}
+            onClick={row.action}
+          >
+            <span className="guide-result-icon" aria-hidden="true">
+              <Icon size={28} strokeWidth={2.2} />
+            </span>
             <span className="guide-result-copy">
               <small>{row.meta}</small>
               <strong>{row.title}</strong>
               <span>{row.body}</span>
             </span>
           </button>
-        ))}
+          )
+        })}
       </div>
 
       <div className="phase-roadmap">

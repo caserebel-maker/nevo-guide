@@ -309,6 +309,7 @@ export type HubItem = {
   date: string
   image?: string // Base64 data URL or external image path
   images?: string[]
+  video?: string
 }
 
 export const initialHubItems: HubItem[] = [
@@ -359,6 +360,18 @@ export const initialHubItems: HubItem[] = [
     author: 'Admin Paul',
     date: '2026-06-23',
     images: ['/media/q05/defects/usb-c-cable-melted.png'],
+  },
+  {
+    id: 'hub-10',
+    type: 'issue',
+    category: 'comfort',
+    title: 'เสียงระบบดังรวนมากหลังจอดรถไว้สักพัก',
+    description: 'มีรายงานจากผู้ใช้ว่า หลังจอดรถไว้ประมาณ 10-15 นาที ระบบเสียงภายในรถมีอาการดังรวน/ดังผิดปกติขึ้นมาเอง เสียงค่อนข้างดังและเกิดเป็นช่วง ๆ โดยคลิปประกอบช่วยให้เห็นอาการได้ชัดกว่าภาพนิ่ง อาการนี้ยังต้องเก็บข้อมูลเพิ่มเพื่อแยกว่าเกี่ยวกับระบบเสียง, หน้าจอ, Bluetooth/มือถือ, การปลุกโมดูลรถ หรือซอฟต์แวร์ของรถ',
+    solution: 'แนวทางตรวจเบื้องต้น: 1) บันทึกคลิปพร้อมเวลาที่เกิดอาการทุกครั้ง 2) ลองปิด Bluetooth/CarPlay/Android Auto และออกจากแอปที่เชื่อมกับรถก่อนจอด 3) ตรวจว่ามีเพลง วิทยุ หรือเสียงแจ้งเตือนค้างอยู่หรือไม่ 4) ลองรีสตาร์ทหน้าจอกลางก่อนทดสอบซ้ำ 5) หากเกิดซ้ำ ให้ส่งคลิปและเวลาเกิดเหตุให้ศูนย์ตรวจ log ระบบเสียง/อินโฟเทนเมนต์และเวอร์ชันซอฟต์แวร์',
+    upvotes: 0,
+    author: 'Community case',
+    date: '2026-06-25',
+    video: '/media/q05/community/audio-glitch-after-park.mp4',
   },
   {
     id: 'hub-01',

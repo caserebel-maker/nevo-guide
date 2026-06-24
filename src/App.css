@@ -1550,6 +1550,22 @@ body {
   object-fit: contain;
 }
 
+.hub-detail-video {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: #030712;
+}
+
+.hub-detail-video video {
+  display: block;
+  width: 100%;
+  max-height: 620px;
+  aspect-ratio: 9 / 16;
+  object-fit: contain;
+  background: #030712;
+}
+
 .hub-detail-image span {
   position: absolute;
   right: 12px;
@@ -1585,6 +1601,24 @@ body {
   z-index: 6001;
   color: #fff;
   background: rgba(255, 255, 255, 0.12);
+}
+
+.hub-card-video {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #020617;
+  margin-bottom: 16px;
+}
+
+.hub-card-video video {
+  display: block;
+  width: 100%;
+  max-height: 280px;
+  aspect-ratio: 9 / 16;
+  object-fit: contain;
+  background: #020617;
 }
 
 /* Workarounds */
@@ -2759,33 +2793,78 @@ body {
 
 .guide-result-card {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
   min-height: 132px;
-  padding: 10px;
-  border: 1px solid var(--hairline);
-  background: var(--surface-strong);
-  color: var(--text-main);
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
   text-align: left;
   cursor: pointer;
   font: inherit;
   overflow: hidden;
-  box-shadow: var(--card-shadow);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, filter 0.2s ease;
 }
 
 .guide-result-card:hover {
-  border-color: rgba(37, 99, 235, 0.35);
   transform: translateY(-1px);
-  box-shadow: var(--card-shadow-hover);
+  filter: saturate(1.08);
+  box-shadow: 0 22px 46px rgba(15, 23, 42, 0.22);
 }
 
-.guide-result-card img {
-  width: 96px;
-  height: 112px;
-  object-fit: cover;
-  border-radius: 8px;
-  background: #020617;
+.guide-result-card.tone-sky {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+}
+
+.guide-result-card.tone-blue {
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+}
+
+.guide-result-card.tone-emerald {
+  background: linear-gradient(135deg, #047857, #34d399);
+}
+
+.guide-result-card.tone-rose {
+  background: linear-gradient(135deg, #be123c, #fb7185);
+}
+
+.guide-result-card.tone-slate {
+  background: linear-gradient(135deg, #334155, #64748b);
+}
+
+.guide-result-card.tone-violet {
+  background: linear-gradient(135deg, #6d28d9, #a78bfa);
+}
+
+.guide-result-card.tone-cyan {
+  background: linear-gradient(135deg, #0e7490, #22d3ee);
+}
+
+.guide-result-card.tone-amber {
+  background: linear-gradient(135deg, #b45309, #fbbf24);
+}
+
+.guide-result-card.tone-lime {
+  background: linear-gradient(135deg, #4d7c0f, #84cc16);
+}
+
+.guide-result-card.tone-orange {
+  background: linear-gradient(135deg, #c2410c, #fb923c);
+}
+
+.guide-result-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 16px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
 }
 
 .guide-result-copy {
@@ -2796,20 +2875,20 @@ body {
 }
 
 .guide-result-copy small {
-  color: var(--accent);
+  color: rgba(255, 255, 255, 0.82);
   font-size: 11px;
   font-weight: 800;
 }
 
 .guide-result-copy strong {
-  color: var(--text-strong);
+  color: #fff;
   font-size: 14px;
   line-height: 1.3;
 }
 
 .guide-result-copy > span {
   display: -webkit-box;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 12px;
   line-height: 1.45;
   overflow: hidden;
@@ -2995,12 +3074,14 @@ body {
   }
 
   .guide-result-card {
-    grid-template-columns: 86px minmax(0, 1fr);
+    grid-template-columns: 54px minmax(0, 1fr);
+    min-height: 120px;
   }
 
-  .guide-result-card img {
-    width: 86px;
-    height: 102px;
+  .guide-result-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
   }
 }
 
