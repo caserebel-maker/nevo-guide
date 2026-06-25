@@ -1396,6 +1396,7 @@ function GuidebookPanel({
       title: feature.title,
       body: `${feature.summary} ${feature.facts.join(' ')}`,
       meta: `${feature.label} / คู่มือหลัก`,
+      image: feature.image.src,
       icon: feature.icon,
       tone: toneByCategory[feature.id],
       action: () => onFeatureSelect(feature.id),
@@ -1407,6 +1408,7 @@ function GuidebookPanel({
       title: capture.title,
       body: `${capture.note} ${capture.sourceVideo}`,
       meta: `${categoryLabels[capture.featureId]} / ภาพเมนูจากคลิป`,
+      image: capture.src,
       icon: MonitorPlay,
       tone: toneByCategory[capture.featureId],
       action: () => onCaptureSelect(capture),
@@ -1418,6 +1420,7 @@ function GuidebookPanel({
       title: item.title,
       body: `${item.description} ${item.solution ?? ''} ${item.author}`,
       meta: `${categoryLabels[item.category]} / ${item.type === 'tip' ? 'ทิปจากผู้ใช้' : 'ปัญหาที่พบ'}`,
+      image: item.images?.[0] ?? item.image,
       icon: item.type === 'tip' ? Lightbulb : AlertTriangle,
       tone: item.type === 'tip' ? 'lime' : 'orange',
       action: () => document.getElementById('hub-section')?.scrollIntoView({ behavior: 'smooth' }),
@@ -1476,9 +1479,13 @@ function GuidebookPanel({
             className={`guide-result-card type-${row.type} tone-${row.tone}`}
             onClick={row.action}
           >
-            <span className="guide-result-icon" aria-hidden="true">
-              <Icon size={28} strokeWidth={2.2} />
-            </span>
+            {row.image ? (
+              <img src={row.image} alt="" loading="lazy" />
+            ) : (
+              <span className="guide-result-icon" aria-hidden="true">
+                <Icon size={28} strokeWidth={2.2} />
+              </span>
+            )}
             <span className="guide-result-copy">
               <small>{row.meta}</small>
               <strong>{row.title}</strong>
