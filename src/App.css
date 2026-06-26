@@ -99,11 +99,12 @@ body {
 .sidebar-brand {
   display: flex;
   align-items: center;
+  justify-content: center;
   margin-bottom: 35px;
 }
 
 .brand-logo {
-  height: 64px;
+  height: 128px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -3262,9 +3263,9 @@ body {
 }
 
 .sidebar-brand {
-  align-items: flex-start;
-  gap: 0;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  display: flex;
   margin: 0 14px 38px;
 }
 
