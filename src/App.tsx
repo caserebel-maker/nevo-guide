@@ -604,15 +604,6 @@ function App() {
         </section>
 
         <div className="content-container">
-          <ClipPreviewStrip
-            captures={activeModel.screenCaptures.slice(0, 5)}
-            onSelect={(capture) => {
-              setActiveFeatureId(capture.featureId)
-              setSelectedImageId(capture.id)
-              document.getElementById('screen-captures')?.scrollIntoView({ behavior: 'smooth' })
-            }}
-          />
-
           <GuidebookPanel
             features={activeModel.features}
             captures={activeModel.screenCaptures}
@@ -825,6 +816,15 @@ function App() {
               )}
             </div>
           </section>
+
+          <ClipPreviewStrip
+            captures={activeModel.screenCaptures.slice(0, 5)}
+            onSelect={(capture) => {
+              setActiveFeatureId(capture.featureId)
+              setSelectedImageId(capture.id)
+              document.getElementById('screen-captures')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          />
 
           <ScreenCapturePanel
             captures={screenCaptures}
