@@ -637,13 +637,6 @@ function App() {
             }}
           />
 
-          <ScreenCapturePanel
-            captures={screenCaptures}
-            activeFeatureLabel={activeFeature.label}
-            selectedImage={selectedImage}
-            onSelect={setSelectedImageId}
-          />
-
           {/* Hub Section */}
           <section className="hub-section-layout" id="hub-section">
             <div className="hub-header">
@@ -841,6 +834,13 @@ function App() {
               )}
             </div>
           </section>
+
+          <ScreenCapturePanel
+            captures={screenCaptures}
+            activeFeatureLabel={activeFeature.label}
+            selectedImage={selectedImage}
+            onSelect={setSelectedImageId}
+          />
         </div>
       </div>
 
