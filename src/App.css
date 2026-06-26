@@ -69,9 +69,9 @@ body {
   display: flex;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.15), transparent 50rem),
-    radial-gradient(circle at 15% 85%, rgba(79, 70, 229, 0.18), transparent 45rem),
-    linear-gradient(135deg, #060914 0%, #0d1527 50%, #04060d 100%);
+    radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.28), transparent 55rem),
+    radial-gradient(circle at 15% 80%, rgba(59, 130, 246, 0.22), transparent 45rem),
+    linear-gradient(135deg, #060d21 0%, #0c1836 50%, #040714 100%);
 }
 
 :root[data-theme="light"] .app-layout-wrapper {
@@ -3331,8 +3331,9 @@ body {
 :root[data-theme="dark"] .main-content-layout,
 :root:not([data-theme="light"]) .main-content-layout {
   background:
-    radial-gradient(circle at 70% 0%, rgba(59, 130, 246, 0.24), transparent 38rem),
-    linear-gradient(145deg, #07101f 0%, #0b1730 52%, #050a14 100%);
+    radial-gradient(circle at 70% 0%, rgba(56, 189, 248, 0.32), transparent 45rem),
+    radial-gradient(circle at 20% 60%, rgba(59, 130, 246, 0.16), transparent 40rem),
+    linear-gradient(145deg, #071329 0%, #0d1e3d 52%, #050c1b 100%);
 }
 
 .hero-banner {
