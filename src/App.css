@@ -100,11 +100,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 35px;
+  margin-bottom: 30px;
 }
 
 .brand-logo {
-  height: 128px;
+  height: 148px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -2516,7 +2516,7 @@ body {
 
 .sidebar-brand {
   min-height: 42px;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
 .brand-mark.brand-nevo {
@@ -3155,7 +3155,7 @@ body {
 
 .sidebar-navigation {
   width: 212px;
-  padding: 28px 14px;
+  padding: 24px 14px;
   background: var(--mock-surface);
 }
 
@@ -3266,7 +3266,7 @@ body {
   align-items: center;
   justify-content: center;
   display: flex;
-  margin: 0 14px 38px;
+  margin: 0 0 32px;
 }
 
 .brand-mark.brand-nevo {
