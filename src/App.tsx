@@ -394,11 +394,7 @@ function App() {
       {/* Desktop Sidebar Navigation */}
       <aside className="sidebar-navigation">
         <div className="sidebar-brand">
-          <span className="brand-mark brand-nevo">NEVO</span>
-          <span className="brand-copy">
-            <strong>Q05 Guide</strong>
-            <small>Owner e-guide</small>
-          </span>
+          <img src="/logo.png" alt="NEVO Q05 Guide" className="brand-logo" />
         </div>
 
         <div className="sidebar-section">
@@ -440,11 +436,7 @@ function App() {
           <aside className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <header className="drawer-header">
               <div className="sidebar-brand">
-                <span className="brand-mark brand-nevo">NEVO</span>
-                <span className="brand-copy">
-                  <strong>Q05 Guide</strong>
-                  <small>Owner e-guide</small>
-                </span>
+                <img src="/logo.png" alt="NEVO Q05 Guide" className="brand-logo" />
               </div>
               <button type="button" className="close-drawer-btn" onClick={() => setIsMobileMenuOpen(false)}>
                 <X size={20} />
@@ -514,8 +506,7 @@ function App() {
           </button>
           
           <div className="mobile-brand-title">
-            <span className="brand-mark brand-nevo">NEVO</span>
-            <strong>Q05 Guide</strong>
+            <img src="/logo.png" alt="NEVO Q05 Guide" className="brand-logo-mobile" />
           </div>
 
           <div className="flex-grow" />
