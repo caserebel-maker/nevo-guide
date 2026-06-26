@@ -4,7 +4,7 @@
   --sidebar-bg: #0b1120;
   --main-bg: #060913;
   --panel-bg: rgba(13, 20, 38, 0.65);
-  --border-color: rgba(56, 189, 248, 0.12);
+  --border-color: rgba(56, 189, 248, 0.28);
   --text-strong: #f8fafc;
   --text-main: #cbd5e1;
   --text-muted: #64748b;
@@ -2469,7 +2469,7 @@ body {
 :root {
   --surface: rgba(9, 16, 30, 0.78);
   --surface-strong: rgba(13, 21, 38, 0.92);
-  --hairline: rgba(148, 163, 184, 0.16);
+  --hairline: rgba(56, 189, 248, 0.32);
   --guide-blue: #3b82f6;
   --guide-cyan: #38bdf8;
   --guide-green: #16a34a;
@@ -2708,7 +2708,7 @@ body {
 .screen-capture-section,
 .hub-section-layout {
   background: var(--surface);
-  border: 1px solid var(--hairline);
+  border: 2px solid var(--hairline);
   box-shadow: 0 18px 55px rgba(15, 23, 42, 0.09);
   backdrop-filter: blur(18px);
 }
@@ -3148,7 +3148,7 @@ body {
   --mock-bg: #07101f;
   --mock-surface: rgba(10, 19, 35, 0.86);
   --mock-soft: rgba(21, 39, 69, 0.74);
-  --mock-border: rgba(148, 163, 184, 0.16);
+  --mock-border: rgba(56, 189, 248, 0.3);
   --mock-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
   --mock-title: #f8fbff;
 }
