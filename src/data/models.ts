@@ -314,6 +314,20 @@ export type HubItem = {
 
 export const initialHubItems: HubItem[] = [
   {
+    id: 'hub-13',
+    type: 'issue',
+    category: 'safety',
+    title: 'ไฟ Blind Spot กระจกข้างค้าง หลังล็อก/ปลดล็อกรถแล้วยังไม่หาย',
+    description:
+      'เคสจากสมาชิกกลุ่ม NEVO Q05 Thailand: ไฟเตือน blind spot บริเวณกระจกข้างติดค้างผิดปกติ ผู้ใช้ระบุว่าลองล็อกรถและปลดล็อกหลายรอบ รวมถึงลองรีเซ็ตแล้ว แต่อาการยังไม่หาย จากภาพเห็นไฟเตือนสีส้มที่กระจกข้างติดอยู่ขณะรถจอด/อยู่ในพื้นที่จอดรถ จึงควรจัดเป็นอาการเกี่ยวกับระบบ BSM หรือเซนเซอร์ตรวจจับด้านข้างที่ต้องตรวจสอบเพิ่มเติม',
+    solution:
+      'แนวทางเบื้องต้น: ถ่ายรูปหรือวิดีโอเก็บหลักฐานพร้อมเวลาและสถานะรถ, ตรวจว่าบริเวณกันชนหลัง/ด้านข้างรถที่เกี่ยวกับเรดาร์ BSM ไม่มีคราบน้ำ โคลน สติ๊กเกอร์ ฟิล์ม หรือสิ่งกีดขวาง, ดับรถและรอระบบ sleep ก่อนลองเปิดใหม่อีกครั้ง หากไฟยังค้างหรือเกิดซ้ำ ควรให้ศูนย์ตรวจ log ระบบ ADAS/BSM, เซนเซอร์ blind spot, การคาลิเบรต และเวอร์ชันซอฟต์แวร์ โดยควรระวังการพึ่งพา BSM จนกว่าจะตรวจเรียบร้อย',
+    upvotes: 0,
+    author: 'Admin Paul',
+    date: '2026-07-07',
+    images: ['/media/q05/defects/bsm-blind-spot-indicator-stuck.png'],
+  },
+  {
     id: 'hub-10',
     type: 'issue',
     category: 'screen',
@@ -376,7 +390,7 @@ export const initialHubItems: HubItem[] = [
     images: ['/media/q05/defects/usb-c-cable-melted.png'],
   },
   {
-    id: 'hub-10',
+    id: 'hub-12',
     type: 'issue',
     category: 'comfort',
     title: 'เสียงระบบดังรวนมากหลังจอดรถไว้สักพัก',
