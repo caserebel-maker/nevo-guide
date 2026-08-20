@@ -1,961 +1,999 @@
-import { useState, useEffect } from 'react'
-import {
-  Check,
-  Search,
-  ThumbsUp,
-  Plus,
-  AlertTriangle,
-  Sparkles,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Lightbulb,
-  Info,
-  Menu,
-  Images,
-  MonitorPlay,
-  Sun,
-  Moon,
-} from 'lucide-react'
-import './App.css'
-import {
-  models,
-  initialHubItems,
-  type FeatureId,
-  type ImageAsset,
-  type ModelId,
-  type ScreenCapture,
-  type HubItem,
-  type HubItemType,
-} from './data/models'
+import { useState, useEffect, useRef } from 'react';
+import { 
+  Check, 
+  Phone, 
+  ArrowLeft, 
+  Sun, 
+  Moon, 
+  Star,
+  ChevronRight
+} from 'lucide-react';
+import './App.css';
+import { COURSES } from './data/courses';
+import type { CourseStatus } from './data/courses';
+import LogisticsSeminarBrief from './components/LogisticsSeminarBrief';
 
-const compressImage = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = (event) => {
-      const img = new Image()
-      img.src = event.target?.result as string
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const maxW = 800
-        const maxH = 800
-        let width = img.width
-        let height = img.height
+// Animated Counter Component
+interface CounterProps {
+  target: number;
+  plus?: boolean;
+  unit?: string;
+}
 
-        if (width > height) {
-          if (width > maxW) {
-            height *= maxW / width
-            width = maxW
+function Counter({ target, plus = false, unit = '' }: CounterProps) {
+  const [count, setCount] = useState(0);
+  const elementRef = useRef<HTMLHeadingElement | null>(null);
+
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            let start = 0;
+            const end = target;
+            const duration = 1500; // ms
+            const stepTime = 25; // ms
+            const steps = duration / stepTime;
+            const increment = Math.max(1, Math.ceil(end / steps));
+
+            const timer = setInterval(() => {
+              start += increment;
+              if (start >= end) {
+                start = end;
+                clearInterval(timer);
+              }
+              setCount(start);
+            }, stepTime);
+
+            observer.unobserve(entry.target);
           }
-        } else {
-          if (height > maxH) {
-            width *= maxH / height
-            height = maxH
-          }
-        }
-        canvas.width = width
-        canvas.height = height
+        });
+      },
+      { threshold: 0.5 }
+    );
 
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, width, height)
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
-        resolve(dataUrl)
-      }
-      img.onerror = (err) => reject(err)
-    }
-    reader.onerror = (err) => reject(err)
-  })
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target]);
+
+  return (
+    <h3 ref={elementRef} className="counter-val">
+      {count.toLocaleString()}
+      {plus && <span className="stat-plus">+</span>}
+      {unit && <span className="stat-unit"> {unit}</span>}
+    </h3>
+  );
 }
 
 function App() {
-  const [activeModelId, setActiveModelId] = useState<ModelId>('q05')
-  const [activeFeatureId, setActiveFeatureId] = useState<FeatureId>('overview')
-  const [selectedImageId, setSelectedImageId] = useState('q05-hero')
-
+  const [view, setView] = useState<'home' | 'archive' | 'aug-sem1'>('home');
+  const [activeTab, setActiveTab] = useState<'all' | 'open' | 'completed'>('all');
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  
   // Theme State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('nevo_guide_theme')
-    return (saved as 'light' | 'dark') || 'light'
-  })
+    const saved = localStorage.getItem('rakdi_theme');
+    return (saved as 'light' | 'dark') || 'light';
+  });
 
-  // Scroll State for topbar styling
-  const [isScrolled, setIsScrolled] = useState(false)
+  // Nav Scroll State
+  const [isScrolled, setIsScrolled] = useState(false);
 
-  // Layout States
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  // Form Fields States
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [lineId, setLineId] = useState('');
+  const [employmentStatus, setEmploymentStatus] = useState('working');
+  const [company, setCompany] = useState('');
+  const [position, setPosition] = useState('');
+  const [department, setDepartment] = useState('');
+  const [businessType, setBusinessType] = useState('');
+  const [course, setCourse] = useState('');
+  const [source, setSource] = useState('');
+  const [note, setNote] = useState('');
 
-  // Hub States
-  const [hubItems, setHubItems] = useState<HubItem[]>(() => {
-    const savedItems = localStorage.getItem('nevo_q05_hub_items')
-    if (savedItems) {
-      try {
-        return JSON.parse(savedItems) as HubItem[]
-      } catch {
-        return initialHubItems
-      }
-    }
-    localStorage.setItem('nevo_q05_hub_items', JSON.stringify(initialHubItems))
-    return initialHubItems
-  })
-  const [votedIds, setVotedIds] = useState<string[]>(() => {
-    const savedVoted = localStorage.getItem('nevo_q05_voted_ids')
-    if (!savedVoted) return []
-    try {
-      return JSON.parse(savedVoted) as string[]
-    } catch {
-      return []
-    }
-  })
-  const [hubSearch, setHubSearch] = useState('')
-  const [hubTypeFilter, setHubTypeFilter] = useState<'all' | 'tip' | 'issue'>('all')
-  const [hubCatFilter, setHubCatFilter] = useState<string>('all')
-  
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [openWorkaroundIds, setOpenWorkaroundIds] = useState<string[]>([])
+  // Form Submission States
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isFormHighlighted, setIsFormHighlighted] = useState(false);
 
-  // Form states
-  const [formType, setFormType] = useState<HubItemType>('tip')
-  const [formCategory, setFormCategory] = useState<FeatureId>('screen')
-  const [formTitle, setFormTitle] = useState('')
-  const [formDescription, setFormDescription] = useState('')
-  const [formSolution, setFormSolution] = useState('')
-  const [formAuthor, setFormAuthor] = useState('')
-  const [formImage, setFormImage] = useState('')
-  const [formError, setFormError] = useState('')
-  const [showSuccessToast, setShowSuccessToast] = useState(false)
-
-  // Sync theme with DOM attribute
+  // Setup Theme on mount/change
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('nevo_guide_theme', theme)
-  }, [theme])
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('rakdi_theme', theme);
+  }, [theme]);
 
-  // Track window scroll for transparent topbar
+  // Track window scroll for nav
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+      setIsScrolled(window.scrollY > 80);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Intersection Observer for scroll-revelations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+
+    const elements = document.querySelectorAll('.reveal');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [view, activeTab]);
+
+  // Deep-linking: check URL hash on load
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash.startsWith('#course-')) {
+        const id = window.location.hash.replace('#course-', '');
+        const found = COURSES.find((c) => c.id === id);
+        if (found) {
+          setSelectedCourseId(id);
+          document.body.style.overflow = 'hidden';
+        }
+      } else {
+        setSelectedCourseId(null);
+        document.body.style.overflow = '';
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    // Trigger initially
+    handleHashChange();
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Pathname & Hash routing for subpages
+  useEffect(() => {
+    const handleRouting = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      if (path.endsWith('/aug-sem1') || hash === '#aug-sem1') {
+        setView((prev) => prev !== 'aug-sem1' ? 'aug-sem1' : prev);
+        window.scrollTo({ top: 0 });
+      } else if (path.endsWith('/archive') || hash === '#archive') {
+        setView((prev) => prev !== 'archive' ? 'archive' : prev);
+        window.scrollTo({ top: 0 });
+      } else {
+        // Default back to home if current state is a subview and URL doesn't match
+        setView((prev) => (prev === 'aug-sem1' || prev === 'archive') ? 'home' : prev);
+      }
+    };
+
+    handleRouting();
+    window.addEventListener('hashchange', handleRouting);
+    window.addEventListener('popstate', handleRouting);
+    return () => {
+      window.removeEventListener('hashchange', handleRouting);
+      window.removeEventListener('popstate', handleRouting);
+    };
+  }, []);
+
+  // Parallax scroll effect
+  useEffect(() => {
+    const heroBg = document.querySelector('.hero-bg') as HTMLElement;
+    const parallaxDiv = document.querySelector('.parallax-divider') as HTMLElement;
+
+    const handleParallax = () => {
+      const y = window.scrollY;
+      if (heroBg) {
+        heroBg.style.transform = `translateY(${y * 0.35}px) scale(1.1)`;
+      }
+      if (parallaxDiv) {
+        const rect = parallaxDiv.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          parallaxDiv.style.backgroundPositionY = `${rect.top * 0.3}px`;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleParallax, { passive: true });
+    return () => window.removeEventListener('scroll', handleParallax);
+  }, [view]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
-  }
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
-  const activeModel = models.find((model) => model.id === activeModelId) ?? models[0]
-  const activeFeature = activeModel.features.find((feature) => feature.id === activeFeatureId) ?? activeModel.features[0]
-  const selectableImages = [...activeModel.images, ...activeModel.screenCaptures]
-  const selectedImage =
-    selectableImages.find((image) => image.id === selectedImageId) ?? activeFeature?.image ?? activeModel.images[0]
-  const screenCaptures =
-    activeFeatureId === 'overview'
-      ? activeModel.screenCaptures
-      : activeModel.screenCaptures.filter((capture) => capture.featureId === activeFeatureId)
+  const openModal = (courseId: string) => {
+    setSelectedCourseId(courseId);
+    document.body.style.overflow = 'hidden';
+    window.location.hash = `course-${courseId}`;
+  };
 
-  const handleModelChange = (modelId: ModelId) => {
-    const nextModel = models.find((model) => model.id === modelId)
-    if (!nextModel || nextModel.status === 'future') return
-    setActiveModelId(modelId)
-    setActiveFeatureId('overview')
-    setSelectedImageId(nextModel.images[0]?.id ?? '')
-  }
+  const closeModal = () => {
+    setSelectedCourseId(null);
+    document.body.style.overflow = '';
+    // Clear hash without reloading
+    history.replaceState(null, '', window.location.pathname);
+  };
 
-  const handleFeatureChange = (featureId: FeatureId) => {
-    const feature = activeModel.features.find((item) => item.id === featureId)
-    if (!feature) return
-    setActiveFeatureId(featureId)
-    setSelectedImageId(feature.image.id)
+  const registerFromModal = (courseId: string) => {
+    closeModal();
+    // Pre-fill
+    setCourse(courseId);
     
-    // Scroll to details on mobile
-    if (window.innerWidth <= 1080) {
-      document.getElementById('manual-detail')?.scrollIntoView({ behavior: 'smooth' })
+    // Smooth scroll to form
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
     }
-  }
 
-  const handleVote = (id: string) => {
-    let nextVoted = [...votedIds]
-    let increment = 1
-    
-    if (votedIds.includes(id)) {
-      nextVoted = votedIds.filter(v => v !== id)
-      increment = -1
-    } else {
-      nextVoted.push(id)
+    // Highlight form card
+    setIsFormHighlighted(true);
+    setTimeout(() => setIsFormHighlighted(false), 2000);
+  };
+
+  // Filter courses for main page grid
+  const getFilteredCourses = () => {
+    if (activeTab === 'all') return COURSES;
+    if (activeTab === 'open') {
+      return COURSES.filter(c => c.status === 'open' || c.status === 'coming_soon');
     }
-    
-    setVotedIds(nextVoted)
-    localStorage.setItem('nevo_q05_voted_ids', JSON.stringify(nextVoted))
+    return COURSES.filter(c => c.status === 'completed');
+  };
 
-    const nextItems = hubItems.map(item => {
-      if (item.id === id) {
-        return { ...item, upvotes: Math.max(0, item.upvotes + increment) }
-      }
-      return item
-    })
-    setHubItems(nextItems)
-    localStorage.setItem('nevo_q05_hub_items', JSON.stringify(nextItems))
-  }
+  // Get completed courses for Archive page
+  const getArchiveCourses = () => {
+    return COURSES.filter(c => c.status === 'completed');
+  };
 
-  const toggleWorkaround = (id: string) => {
-    if (openWorkaroundIds.includes(id)) {
-      setOpenWorkaroundIds(openWorkaroundIds.filter(x => x !== id))
-    } else {
-      setOpenWorkaroundIds([...openWorkaroundIds, id])
-    }
-  }
+  // Get course selection options
+  const getOpenCourses = () => {
+    return COURSES.filter(c => c.status === 'open' || c.status === 'coming_soon');
+  };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // Form submission handler
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError(null);
+    setSubmitSuccess(false);
+
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbzD0fE4RfR_z-4ONW58O1xV0UePzYrJY2Pvd8UKJ3p6BLkpMoXoqAubncW4MgAlbbaz/exec';
+
+    const params = new URLSearchParams({
+      name,
+      phone,
+      email,
+      lineId,
+      employmentStatus: 
+        employmentStatus === 'studying' ? 'กำลังศึกษาอยู่' :
+        employmentStatus === 'fresh_grad' ? 'เพิ่งจบ (ยังไม่ได้เริ่มงาน)' :
+        'ทำงานแล้ว',
+      company,
+      position,
+      department,
+      businessType: employmentStatus === 'working' ? businessType : 'นักศึกษา / ยังไม่ได้ทำงาน',
+      course: 
+        course === 'inhouse' ? 'ขอจัดอบรมภายในองค์กร (In-house Training)' :
+        course === 'other' ? 'สอบถามข้อมูลเพิ่มเติม' :
+        (() => {
+          const found = COURSES.find(c => c.id === course);
+          return found ? `${found.title}${found.batch ? ` (${found.batch})` : ''}` : course;
+        })(),
+      source,
+      note
+    });
+
     try {
-      const compressed = await compressImage(file)
-      setFormImage(compressed)
+      // Send data to Apps Script Web App
+      await fetch(scriptUrl, {
+        method: 'POST',
+        mode: 'no-cors', // allows sending data without getting blocked by CORS redirects
+        body: params
+      });
+
+      setSubmitSuccess(true);
+      // Reset form fields
+      setName('');
+      setPhone('');
+      setEmail('');
+      setLineId('');
+      setEmploymentStatus('working');
+      setCompany('');
+      setPosition('');
+      setDepartment('');
+      setBusinessType('');
+      setCourse('');
+      setSource('');
+      setNote('');
     } catch (err) {
-      console.error(err)
-      setFormError('ไม่สามารถอัปโหลดหรือบีบอัดรูปภาพได้')
+      setSubmitError('เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ');
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formTitle.trim() || !formDescription.trim()) {
-      setFormError('กรุณากรอกหัวข้อและรายละเอียดให้ครบถ้วน')
-      return
+  const selectedCourse = COURSES.find(c => c.id === selectedCourseId);
+
+  // Status mapping
+  const getStatusConfig = (status: CourseStatus) => {
+    switch (status) {
+      case 'open':
+        return { label: 'เปิดรับสมัคร', ribbonClass: '', badgeClass: 'status-open', icon: '📝' };
+      case 'coming_soon':
+        return { label: 'เร็วๆนี้', ribbonClass: 'ribbon-coming', badgeClass: 'status-coming', icon: '🔔' };
+      case 'completed':
+        return { label: 'เสร็จสิ้นแล้ว', ribbonClass: 'ribbon-completed', badgeClass: 'status-completed', icon: '✅' };
+      default:
+        return { label: 'เปิดรับสมัคร', ribbonClass: '', badgeClass: 'status-open', icon: '📝' };
     }
-
-    const newItem: HubItem = {
-      id: 'hub-user-' + Date.now(),
-      type: formType,
-      category: formCategory,
-      title: formTitle.trim(),
-      description: formDescription.trim(),
-      solution: formType === 'issue' ? (formSolution.trim() || undefined) : undefined,
-      image: formImage || undefined,
-      upvotes: 0,
-      author: formAuthor.trim() || 'ผู้ใช้ทั่วไป',
-      date: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
-    }
-
-    const nextItems = [newItem, ...hubItems]
-    setHubItems(nextItems)
-    localStorage.setItem('nevo_q05_hub_items', JSON.stringify(nextItems))
-
-    // Reset Form
-    setFormTitle('')
-    setFormDescription('')
-    setFormSolution('')
-    setFormAuthor('')
-    setFormImage('')
-    setFormError('')
-    setIsModalOpen(false)
-    
-    // Toast notification
-    setShowSuccessToast(true)
-    setTimeout(() => setShowSuccessToast(false), 3000)
-  }
-
-  const categoryLabels: Record<FeatureId, string> = {
-    overview: 'ภาพรวม',
-    screen: 'หน้าจอ',
-    drive: 'การขับขี่',
-    comfort: 'ห้องโดยสาร',
-    safety: 'ความปลอดภัย',
-    charging: 'การชาร์จ',
-    exterior: 'ภายนอก',
-    care: 'ดูแลรักษา',
-  }
-
-  const filteredHubItems = hubItems.filter(item => {
-    if (hubTypeFilter !== 'all' && item.type !== hubTypeFilter) return false
-    if (hubCatFilter !== 'all' && item.category !== hubCatFilter) return false
-
-    if (hubSearch.trim()) {
-      const q = hubSearch.toLowerCase()
-      const titleMatch = item.title.toLowerCase().includes(q)
-      const descMatch = item.description.toLowerCase().includes(q)
-      const solMatch = item.solution?.toLowerCase().includes(q) ?? false
-      const authorMatch = item.author.toLowerCase().includes(q)
-      return titleMatch || descMatch || solMatch || authorMatch
-    }
-
-    return true
-  })
+  };
 
   return (
-    <div className="app-layout-wrapper">
-      {/* Success Toast */}
-      {showSuccessToast && (
-        <div className="toast-notification" role="alert">
-          <Sparkles size={16} />
-          <span>บันทึกข้อมูลเรียบร้อยแล้ว! ขอบคุณที่ร่วมแบ่งปัน</span>
-        </div>
-      )}
-
-      {/* Desktop Sidebar Navigation */}
-      <aside className="sidebar-navigation">
-        <div className="sidebar-brand">
-          <span className="brand-mark">N</span>
-          <strong>NEVO Q05 GUIDE</strong>
-        </div>
-
-        <div className="sidebar-section">
-          <span className="sidebar-section-title">รุ่นรถยนต์</span>
-          <ModelSelect activeModelId={activeModelId} onChange={handleModelChange} />
-        </div>
-
-        <div className="sidebar-section flex-grow">
-          <span className="sidebar-section-title">หัวข้อคู่มือการใช้งาน</span>
-          <nav className="sidebar-menu-list">
-            {activeModel.features.map((feature) => {
-              const Icon = feature.icon
-              return (
-                <button
-                  key={feature.id}
-                  type="button"
-                  className={`sidebar-menu-item ${activeFeatureId === feature.id ? 'is-active' : ''}`}
-                  onClick={() => handleFeatureChange(feature.id)}
-                >
-                  <Icon size={18} />
-                  <span>{feature.label}</span>
-                </button>
-              )
-            })}
+    <div className="rakdi-app">
+      {/* Floating Navigation */}
+      <header className={`floating-nav ${isScrolled ? 'scrolled' : ''}`} id="nav">
+        <div className="nav-inner">
+          <a href="#" className="nav-logo" onClick={(e) => { e.preventDefault(); setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+            <img src="https://ebcinext.com/wp-content/uploads/2021/03/rdlogo1-3.png" alt="RAKDI" />
+          </a>
+          <nav className="nav-links">
+            <a onClick={() => { setView('home'); setTimeout(() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' }), 50); }}>เกี่ยวกับเรา</a>
+            <a onClick={() => { setView('home'); setTimeout(() => document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth' }), 50); }}>หลักสูตร</a>
+            <a onClick={() => { setView('home'); setTimeout(() => document.getElementById('achievements')?.scrollIntoView({ behavior: 'smooth' }), 50); }}>ผลงาน</a>
+            <button className="theme-toggle-btn" onClick={toggleTheme} aria-label={theme === 'light' ? 'เปิดโหมดมืด' : 'เปิดโหมดสว่าง'}>
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+            <a onClick={() => { setView('home'); setTimeout(() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }), 50); }} className="nav-cta">สมัครอบรม</a>
           </nav>
         </div>
+      </header>
 
-        <div className="sidebar-footer-menu">
-          <a href="#hub-section" className="sidebar-menu-item hub-link">
-            <Lightbulb size={18} />
-            <span>คลังทิป & ปัญหาที่พบ</span>
-          </a>
-        </div>
-      </aside>
+      {view === 'home' && (
+        <>
+          {/* Hero Section */}
+          <section className="hero" id="hero">
+            <div className="hero-bg" style={{ backgroundImage: "url('/rakdi-banner.png')" }}></div>
+            <div className="hero-overlay"></div>
 
-      {/* Mobile Drawer (Hamburger Menu) */}
-      {isMobileMenuOpen && (
-        <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}>
-          <aside className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
-            <header className="drawer-header">
-              <div className="sidebar-brand">
-                <span className="brand-mark">N</span>
-                <strong>NEVO Q05 GUIDE</strong>
-              </div>
-              <button type="button" className="close-drawer-btn" onClick={() => setIsMobileMenuOpen(false)}>
-                <X size={20} />
-              </button>
-            </header>
+            <div className="hero-shape shape-1"></div>
+            <div className="hero-shape shape-2"></div>
+            <div className="hero-shape shape-3"></div>
 
-            <div className="drawer-content">
-              <div className="sidebar-section">
-                <span className="sidebar-section-title">รุ่นรถยนต์</span>
-                <ModelSelect
-                  activeModelId={activeModelId}
-                  onChange={(modelId) => {
-                    handleModelChange(modelId)
-                    setIsMobileMenuOpen(false)
-                  }}
-                />
-              </div>
-
-              <div className="sidebar-section">
-                <span className="sidebar-section-title">หัวข้อคู่มือการใช้งาน</span>
-                <nav className="sidebar-menu-list">
-                  {activeModel.features.map((feature) => {
-                    const Icon = feature.icon
-                    return (
-                      <button
-                        key={feature.id}
-                        type="button"
-                        className={`sidebar-menu-item ${activeFeatureId === feature.id ? 'is-active' : ''}`}
-                        onClick={() => {
-                          handleFeatureChange(feature.id)
-                          setIsMobileMenuOpen(false)
-                        }}
-                      >
-                        <Icon size={18} />
-                        <span>{feature.label}</span>
-                      </button>
-                    )
-                  })}
-                </nav>
-              </div>
-
-              <div className="sidebar-footer-menu" style={{ border: 'none', padding: 0, marginTop: '20px' }}>
-                <a
-                  href="#hub-section"
-                  className="sidebar-menu-item hub-link"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Lightbulb size={18} />
-                  <span>คลังทิป & ปัญหาที่พบ</span>
-                </a>
+            <div className="hero-body">
+              <span className="pill reveal delay-100">✦ สถาบันวิจัยและพัฒนาความรู้ภายใต้ EBCI</span>
+              <h1 className="reveal delay-200">
+                Unlock Your Potential<br/>
+                <span className="hero-accent">RAKDI Institute</span>
+              </h1>
+              <p className="hero-sub reveal delay-300">
+                ยกระดับศักยภาพผู้ประกอบการและบุคลากรด้านการค้าระหว่างประเทศ<br className="hide-mobile"/>
+                และโลจิสติกส์ สู่มาตรฐานสากลกับทีมวิทยากรจาก EBCI
+              </p>
+              <div className="hero-btns reveal delay-400">
+                <a onClick={() => document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth' })} className="btn-glow">ดูหลักสูตรทั้งหมด</a>
+                <a onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })} className="btn-ghost">เกี่ยวกับสถาบัน →</a>
               </div>
             </div>
-          </aside>
-        </div>
-      )}
 
-      {/* Main Content Area */}
-      <div className="main-content-layout">
-        <header className={`main-topbar ${isScrolled ? 'is-scrolled' : ''}`}>
-          <button
-            type="button"
-            className="hamburger-menu-btn"
-            onClick={() => setIsMobileMenuOpen(true)}
-            aria-label="เปิดเมนูนำทาง"
-          >
-            <Menu size={20} />
-          </button>
-          
-          <div className="mobile-brand-title">
-            <span className="brand-mark">N</span>
-            <strong>NEVO Q05 GUIDE</strong>
-          </div>
-
-          <div className="flex-grow" />
-
-          {/* Theme Switcher Button */}
-          <button
-            type="button"
-            className="theme-switcher-btn"
-            onClick={toggleTheme}
-            aria-label={theme === 'light' ? 'เปิดโหมดมืด' : 'เปิดโหมดสว่าง'}
-            title={theme === 'light' ? 'เปิดโหมดมืด' : 'เปิดโหมดสว่าง'}
-          >
-            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-          </button>
-
-          <label className="main-search-box" aria-label="ค้นหารูปภาพ">
-            <Search size={16} />
-            <input
-              value={hubSearch}
-              onChange={(event) => setHubSearch(event.target.value)}
-              placeholder="ค้นหาทิป, ปัญหา, ฟังก์ชัน..."
-            />
-          </label>
-        </header>
-
-        {/* Hero Banner Section */}
-        <section className="hero-banner">
-          <div className="hero-banner-overlay" />
-          <img className="hero-banner-img" src={activeModel.images[0].src} alt={activeModel.name} />
-          <div className="hero-banner-content">
-            <span className="hero-banner-tag">{activeModel.name} / {activeModel.market}</span>
-            <h1 className="hero-banner-title">คู่มือออนไลน์สำหรับคนใช้ Nevo Q05</h1>
-            <p className="hero-banner-desc">
-              แหล่งรวบรวมข้อมูลอย่างเป็นทางการสำหรับผู้ใช้ NEVO Q05 พร้อมทิปเทคนิคพิเศษ แนะนำวิธีการใช้งาน และสรุปรายงานปัญหาที่พบจากผู้ใช้จริง
-            </p>
-            <div className="hero-banner-actions">
-              <a href="#manual-detail" className="hero-btn hero-btn-primary">
-                อ่านคู่มือการใช้งาน
-              </a>
-              <a href="#hub-section" className="hero-btn hero-btn-secondary">
-                คลังทิป & ปัญหาที่พบ
-              </a>
+            <div className="hero-scroll-hint">
+              <div className="scroll-line"></div>
+              <span>เลื่อนลง</span>
             </div>
-          </div>
-        </section>
-
-        <div className="content-container">
-          <section className="dashboard-grid" id="top">
-            <div className="dashboard-section-header" style={{ gridColumn: 'span 2' }}>
-              <p className="model-line">ระบบรถยนต์เบื้องต้น</p>
-              <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 10px', color: 'var(--text-strong)' }}>
-                สำรวจฟังก์ชันการทำงานหลัก (Interactive Visual Stage)
-              </h2>
-            </div>
-
-            <div className="visual-stage-container">
-              <VisualStage
-                image={selectedImage}
-                activeFeatureId={activeFeatureId}
-                onFeatureChange={handleFeatureChange}
-              />
-            </div>
-
-            <aside className="spec-panel-dashboard">
-              <div className="trim-label-dashboard">สเปกเด่น (Thai Market)</div>
-              {activeModel.specs.map((spec) => (
-                <div className="spec-row-dashboard" key={spec.label}>
-                  <span>{spec.label}</span>
-                  <strong>{spec.value}</strong>
-                </div>
-              ))}
-            </aside>
           </section>
 
-          {/* Interactive Manual Detail Panel */}
-          <section className="manual-detail-section" id="manual-detail">
-            <div className="manual-detail-panel">
-              <div className="manual-detail-image">
-                <img src={activeFeature.image.src} alt={activeFeature.image.alt} />
+          {/* Stats Strip */}
+          <section className="stats-strip">
+            <div className="stats-inner">
+              <div className="stat reveal">
+                <Counter target={2000} plus={true} />
+                <p>ผู้ผ่านการอบรม</p>
               </div>
-              <div className="manual-detail-copy">
-                <p className="category-name">{activeFeature.label}</p>
-                <h2>{activeFeature.title}</h2>
-                <p>{activeFeature.summary}</p>
-                <div className="fact-list">
-                  {activeFeature.facts.map((fact) => (
-                    <span key={fact}>
-                      <Check size={15} />
-                      {fact}
-                    </span>
-                  ))}
-                </div>
+              <div className="stat-divider"></div>
+              <div className="stat reveal">
+                <Counter target={54} unit="รุ่น" />
+                <p>หลักสูตรอบรมสะสม</p>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat reveal">
+                <Counter target={4} unit="ครั้ง" />
+                <p>สัมมนาระดับนานาชาติ</p>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat reveal">
+                <Counter target={3000} plus={true} />
+                <p>ผู้อบรมด้านภาษีอากร</p>
               </div>
             </div>
-
-            {/* Embedded Color Selector inside "Exterior (ภายนอก)" category */}
-            {activeFeatureId === 'exterior' && (
-              <div className="embedded-color-strip">
-                <header className="color-strip-header">
-                  <p className="model-line">สีที่แสดงบนหน้า CHANGAN Thailand</p>
-                  <h2>เลือกสีตัวรถ (Official Colors)</h2>
-                </header>
-                <div className="color-list-embedded">
-                  {activeModel.colors.map((color) => (
-                    <button
-                      key={color.label}
-                      type="button"
-                      className={`color-chip-embedded ${selectedImage.id === color.image.id ? 'is-active' : ''}`}
-                      onClick={() => setSelectedImageId(color.image.id)}
-                    >
-                      <span style={{ background: color.swatch }} />
-                      <div className="color-chip-text">
-                        <strong>{color.label}</strong>
-                        <small>{color.thai}</small>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
 
-          <ScreenCapturePanel
-            captures={screenCaptures}
-            activeFeatureLabel={activeFeature.label}
-            selectedImage={selectedImage}
-            onSelect={setSelectedImageId}
-          />
-
-          {/* Hub Section */}
-          <section className="hub-section-layout" id="hub-section">
-            <div className="hub-header">
-              <div className="hub-title-block">
-                <p className="model-line">NEVO Q05 Owner & Tech Hub</p>
-                <h2>คลังทิปการใช้งานและปัญหาที่พบ</h2>
-                <p className="hub-desc">
-                  ร่วมแชร์และศึกษาเทคนิคการตั้งค่าตัวรถ แนะนำวิธีการแก้ไขปัญหาเบื้องต้นจากข้อมูลผู้ใช้รถและทีมช่างเทคนิค Changan
-                </p>
-              </div>
-              <button type="button" className="add-post-btn" onClick={() => setIsModalOpen(true)}>
-                <Plus size={16} />
-                แชร์ทิป / แจ้งปัญหาใหม่
-              </button>
-            </div>
-
-            <div className="hub-controls">
-              <div className="hub-filters">
-                <button
-                  type="button"
-                  className={`filter-btn ${hubTypeFilter === 'all' ? 'is-active' : ''}`}
-                  onClick={() => setHubTypeFilter('all')}
-                >
-                  ทั้งหมด
-                </button>
-                <button
-                  type="button"
-                  className={`filter-btn type-tip ${hubTypeFilter === 'tip' ? 'is-active' : ''}`}
-                  onClick={() => setHubTypeFilter('tip')}
-                >
-                  <Lightbulb size={14} />
-                  ทริคแนะนำ
-                </button>
-                <button
-                  type="button"
-                  className={`filter-btn type-issue ${hubTypeFilter === 'issue' ? 'is-active' : ''}`}
-                  onClick={() => setHubTypeFilter('issue')}
-                >
-                  <AlertTriangle size={14} />
-                  ปัญหาที่พบ
-                </button>
+          {/* About Section */}
+          <section className="about" id="about">
+            <div className="container two-col">
+              <div className="about-images reveal">
+                <div className="img-stack">
+                  <img src="https://ebcinext.com/wp-content/uploads/2025/07/S__109150231.jpg" alt="Training" className="img-main" />
+                  <img src="https://ebcinext.com/wp-content/uploads/2022/08/SeminarCover3-9-22.jpg" alt="Seminar" className="img-float" />
+                  <div className="exp-badge">
+                    <strong>22+</strong>
+                    <span>ปีแห่งความ<br/>เชี่ยวชาญ EBCI</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="hub-search-row">
-                <label className="hub-cat-select" aria-label="กรองตามหมวดหมู่">
-                  <select value={hubCatFilter} onChange={(e) => setHubCatFilter(e.target.value)}>
-                    <option value="all">ทุกหมวดหมู่</option>
-                    {Object.entries(categoryLabels).map(([id, label]) => (
-                      <option key={id} value={id}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              <div className="about-text">
+                <span className="label reveal">ABOUT US</span>
+                <h2 className="reveal">สถาบันวิจัยและพัฒนาความรู้<br/><span className="text-accent">RAKDI</span></h2>
+                <p className="reveal">บริษัท อีบีซีไอ จำกัด (EBCI) ได้จัดตั้งสถาบัน RAKDI เพื่อรองรับและขับเคลื่อนบุคลากรในด้านต่าง ๆ ดังนี้:</p>
 
-                <div className="hub-search-box">
-                  <Search size={16} />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาทิปหรือรายงานปัญหา..."
-                    value={hubSearch}
-                    onChange={(e) => setHubSearch(e.target.value)}
-                  />
-                  {hubSearch && (
-                    <button type="button" className="clear-search" onClick={() => setHubSearch('')}>
-                      <X size={14} />
-                    </button>
-                  )}
+                <div className="check-list">
+                  <div className="check-item reveal">
+                    <div className="check-icon"><Check size={12} strokeWidth={3} /></div>
+                    <div><strong>พัฒนาคนในองค์กร</strong> — อัปเดตความรู้เพื่อให้คำปรึกษาแก่ลูกค้าได้อย่างถูกต้องแม่นยำ</div>
+                  </div>
+                  <div className="check-item reveal">
+                    <div className="check-icon"><Check size={12} strokeWidth={3} /></div>
+                    <div><strong>พัฒนาบุคคลทั่วไป &amp; SMEs</strong> — อบรมการค้าระหว่างประเทศ, Incoterms, ภาษีศุลกากร, โลจิสติกส์</div>
+                  </div>
+                  <div className="check-item reveal">
+                    <div className="check-icon"><Check size={12} strokeWidth={3} /></div>
+                    <div><strong>กรอบคุณวุฒิแห่งชาติ (NQF)</strong> — ร่วมมือกับภาครัฐพัฒนาสมรรถนะระดับอาชีวะและอุดมศึกษา</div>
+                  </div>
+                </div>
+
+                <div className="about-cta reveal">
+                  <div className="phone-block">
+                    <span className="phone-ring"><Phone size={24} /></span>
+                    <div><small style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)' }}>สอบถามหลักสูตร</small><strong>092-264-2870</strong></div>
+                  </div>
                 </div>
               </div>
             </div>
+          </section>
 
-            <div className="hub-grid">
-              {filteredHubItems.length > 0 ? (
-                filteredHubItems.map((item) => {
-                  const isVoted = votedIds.includes(item.id)
-                  const isWorkaroundOpen = openWorkaroundIds.includes(item.id)
+          {/* Parallax Divider */}
+          <section className="parallax-divider" style={{ backgroundImage: "url('https://ebcinext.com/wp-content/uploads/2022/06/rakdiseminar1-1.jpeg')" }}>
+            <div className="divider-overlay"></div>
+            <div className="divider-content reveal">
+              <h2>"เราเชื่อว่าการศึกษาที่ดี เปลี่ยนแปลงชีวิตและธุรกิจได้"</h2>
+              <p>— สถาบัน RAKDI by EBCI</p>
+            </div>
+          </section>
+
+          {/* Courses & Programs Section */}
+          <section className="courses" id="courses">
+            <div className="container">
+              <div className="section-head reveal">
+                <span className="label">OUR PROGRAMS</span>
+                <h2>หลักสูตรของสถาบัน <span className="text-accent">RAKDI</span></h2>
+              </div>
+
+              {/* Tab Filter */}
+              <div className="course-tabs reveal">
+                <button className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>
+                  ทั้งหมด <span className="tab-count">{COURSES.length}</span>
+                </button>
+                <button className={`tab-btn ${activeTab === 'open' ? 'active' : ''}`} onClick={() => setActiveTab('open')}>
+                  เปิดรับสมัคร <span className="tab-count">{COURSES.filter(c => c.status === 'open' || c.status === 'coming_soon').length}</span>
+                </button>
+                <button className={`tab-btn ${activeTab === 'completed' ? 'active' : ''}`} onClick={() => setActiveTab('completed')}>
+                  เสร็จสิ้นแล้ว <span className="tab-count">{COURSES.filter(c => c.status === 'completed').length}</span>
+                </button>
+              </div>
+
+              {/* Cards Grid */}
+              <div className="course-grid">
+                {getFilteredCourses().map((c) => {
+                  const config = getStatusConfig(c.status);
+                  const ctaText = c.status === 'open' ? 'สมัครเลย'
+                                : c.status === 'completed' ? 'ดูผลงาน'
+                                : 'ดูรายละเอียด';
                   return (
-                    <article key={item.id} className={`hub-card type-${item.type}`}>
-                      <header className="hub-card-header">
-                        <span className={`badge-type ${item.type}`}>
-                          {item.type === 'tip' ? <Lightbulb size={12} /> : <AlertTriangle size={12} />}
-                          {item.type === 'tip' ? 'ทริคแนะนำ' : 'ปัญหาที่พบ'}
-                        </span>
-                        <span className="badge-cat">
-                          {categoryLabels[item.category] || item.category}
-                        </span>
-                      </header>
-                      
-                      <h3 className="hub-card-title">{item.title}</h3>
-                      <p className="hub-card-desc">{item.description}</p>
-
-                      {item.image && (
-                        <div className="hub-card-image">
-                          <img src={item.image} alt={item.title} loading="lazy" />
-                        </div>
-                      )}
-
-                      {item.solution && (
-                        <div className="workaround-section">
-                          <button
-                            type="button"
-                            className={`workaround-toggle-btn ${isWorkaroundOpen ? 'is-open' : ''}`}
-                            onClick={() => toggleWorkaround(item.id)}
-                          >
-                            <span>แนวทางแก้ไข / วิธีแก้เบื้องต้น</span>
-                            {isWorkaroundOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                          </button>
-                          
-                          {isWorkaroundOpen && (
-                            <div className="workaround-content animate-fade-slide">
-                              <p>{item.solution}</p>
-                            </div>
+                    <article key={c.id} className="course-card reveal visible" onClick={() => openModal(c.id)}>
+                      <div className="card-visual">
+                        <img src={c.image} alt={c.title} loading="lazy" />
+                        <div className={`card-ribbon ${config.ribbonClass}`}>{config.label}</div>
+                      </div>
+                      <div className="card-content">
+                        <span className="card-tag">{c.category}</span>
+                        <h3>{c.title}{c.batch && <small style={{ fontWeight: 400, color: 'var(--text-muted)', display: 'block', fontSize: '0.8rem', marginTop: '4px' }}>({c.batch})</small>}</h3>
+                        <p>{c.description}</p>
+                        <div className="card-bottom">
+                          <div className={`card-status-badge ${config.badgeClass}`}>{config.icon} {config.label}</div>
+                          {c.rating ? (
+                            <span className="card-rating" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Star size={13} fill="currentColor" /> {c.rating}/5
+                            </span>
+                          ) : (
+                            <span className="card-price">{c.price}</span>
                           )}
                         </div>
-                      )}
-
-                      <footer className="hub-card-footer">
-                        <div className="hub-card-meta">
-                          <span className="meta-author">โดย: {item.author}</span>
-                          <span className="meta-date">{item.date}</span>
-                        </div>
-                        
-                        <button
-                          type="button"
-                          className={`vote-btn ${isVoted ? 'is-voted' : ''}`}
-                          onClick={() => handleVote(item.id)}
-                          title={isVoted ? 'โหวตแล้ว' : 'คิดว่ามีประโยชน์'}
-                        >
-                          <ThumbsUp size={13} />
-                          <span>{item.upvotes} {isVoted ? 'ขอบคุณ' : 'มีประโยชน์'}</span>
-                        </button>
-                      </footer>
+                        <button className="btn-card" type="button">{ctaText}</button>
+                      </div>
                     </article>
-                  )
-                })
-              ) : (
-                <div className="hub-empty-state">
-                  <Info size={40} className="empty-icon" />
-                  <h3>ไม่พบข้อมูลทิปหรือรายงานปัญหา</h3>
-                  <p>ลองค้นหาด้วยคำอื่น หรือกดปุ่ม "แชร์ทิป / แจ้งปัญหาใหม่" ด้านขวาเพื่อโพสต์ข้อมูลแรกในหมวดนี้</p>
-                </div>
-              )}
+                  );
+                })}
+              </div>
+
+              {/* Link to Archive */}
+              <div className="archive-link-wrapper reveal" style={{ marginTop: '40px', textAlign: 'center' }}>
+                <button onClick={() => { setView('archive'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="btn-card btn-card-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 32px', borderRadius: 'var(--radius)', width: 'auto', cursor: 'pointer' }}>
+                  ดูประวัติหลักสูตรที่เสร็จสิ้นแล้วทั้งหมดในอดีต (Archive) <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
           </section>
-        </div>
-      </div>
 
-      {/* Submit Modal */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <header className="modal-header">
-              <h3>แจ้งปัญหาหรือร่วมแชร์ทิปใหม่</h3>
-              <button type="button" className="close-modal-btn" onClick={() => setIsModalOpen(false)}>
-                <X size={18} />
-              </button>
-            </header>
-            
-            <form onSubmit={handleSubmit} className="modal-form">
-              {formError && (
-                <div className="form-error-msg">
-                  <AlertTriangle size={15} />
-                  <span>{formError}</span>
+          {/* Achievements Timeline */}
+          <section className="achievements" id="achievements">
+            <div className="container">
+              <div className="section-head reveal">
+                <span className="label">KEY MILESTONES</span>
+                <h2>ผลงานและเกียรติประวัติ</h2>
+              </div>
+
+              <div className="timeline">
+                <div className="tl-item reveal">
+                  <div className="tl-num">01</div>
+                  <div className="tl-body">
+                    <h4>สัมมนาระดับนานาชาติ</h4>
+                    <p>จัดงาน International Symposium รวม 4 ครั้ง ร่วมกับกรมส่งเสริมการค้าระหว่างประเทศ กระทรวงพาณิชย์</p>
+                  </div>
                 </div>
-              )}
+                <div className="tl-item reveal">
+                  <div className="tl-num">02</div>
+                  <div className="tl-body">
+                    <h4>ฝึกอบรมผู้ปฏิบัติงานจริง 54 รุ่น</h4>
+                    <p>อบรมความรู้ด้านนำเข้า-ส่งออก และโลจิสติกส์ให้แก่ผู้ปฏิบัติงานจริงกว่า 2,000 คน</p>
+                  </div>
+                </div>
+                <div className="tl-item reveal">
+                  <div className="tl-num">03</div>
+                  <div className="tl-body">
+                    <h4>โครงการ The Twenty</h4>
+                    <p>อบรมแบบเข้มข้น (Intensive Course) สำหรับผู้บริหารและผู้ปฏิบัติงานระดับสูง 20 ท่านต่อรุ่น</p>
+                  </div>
+                </div>
+                <div className="tl-item reveal">
+                  <div className="tl-num">04</div>
+                  <div className="tl-body">
+                    <h4>สนับสนุน SMEs ทั่วประเทศ</h4>
+                    <p>อบรมการจัดการโลจิสติกส์และสิทธิประโยชน์ภาษีอากรให้แก่ SMEs กว่า 4,000 คน</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-              <div className="form-group-row">
-                <div className="form-group">
-                  <span className="form-label">ประเภทรายงาน</span>
-                  <div className="form-radio-group">
-                    <label className={`radio-label ${formType === 'tip' ? 'is-checked' : ''}`}>
-                      <input
-                        type="radio"
-                        name="itemType"
-                        value="tip"
-                        checked={formType === 'tip'}
-                        onChange={() => setFormType('tip')}
-                      />
-                      <Lightbulb size={13} />
-                      ทริคแนะนำ (Tip)
-                    </label>
-                    <label className={`radio-label ${formType === 'issue' ? 'is-checked' : ''}`}>
-                      <input
-                        type="radio"
-                        name="itemType"
-                        value="issue"
-                        checked={formType === 'issue'}
-                        onChange={() => setFormType('issue')}
-                      />
-                      <AlertTriangle size={13} />
-                      ปัญหาที่พบ (Issue)
-                    </label>
+          {/* Contact & Registration Form */}
+          <section className="contact" id="contact">
+            <div className="container contact-grid">
+              <div className="contact-left reveal">
+                <span className="label">REGISTRATION & CONTACT</span>
+                <h2>ติดต่อเข้าร่วมอบรม<br/>หรือจัด <span className="text-accent">In-house Training</span></h2>
+                <p style={{ color: 'var(--text-secondary)' }}>หากสนใจให้สถาบัน RAKDI จัดอบรมพิเศษภายในองค์กร สามารถกรอกข้อมูลเพื่อส่งเรื่องเสนอขอจัดอบรมได้ทันที</p>
+
+                <div className="info-cards">
+                  <div className="info-card">
+                    <div className="info-icon">📍</div>
+                    <div><strong>สำนักงานใหญ่</strong><br/>2024/104-107 Rimtangrotfai-saipaknam Road, Prakanong, Klongtoey, Bangkok 10260</div>
+                  </div>
+                  <div className="info-card">
+                    <div className="info-icon">📞</div>
+                    <div><strong>โทรศัพท์</strong><br/>0-2742-7851-5 | 092-264-2870</div>
+                  </div>
+                  <div className="info-card">
+                    <div className="info-icon">✉️</div>
+                    <div><strong>อีเมล / Line</strong><br/>mks@ebcitrade.com | @ebci</div>
+                  </div>
+                </div>
+              </div>
+
+              <form className={`form-card reveal ${isFormHighlighted ? 'form-highlight' : ''}`} id="registrationForm" onSubmit={handleFormSubmit}>
+                <h3>แบบฟอร์มลงทะเบียน</h3>
+                
+                {/* Section 1 */}
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--red)', marginBottom: '12px', borderLeft: '3px solid var(--red)', paddingLeft: '8px', fontWeight: 700 }}>1. ข้อมูลผู้สมัครอบรม</h4>
+                <div className="form-row">
+                  <div className="field">
+                    <label>ชื่อ-นามสกุล <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="กรอกชื่อ-นามสกุลของคุณ" required />
+                  </div>
+                  <div className="field">
+                    <label>เบอร์โทรศัพท์ <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <input type="tel" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08x-xxx-xxxx" required />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="field">
+                    <label>อีเมล <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@domain.com" required />
+                  </div>
+                  <div className="field">
+                    <label>Line ID</label>
+                    <input type="text" name="lineId" value={lineId} onChange={(e) => setLineId(e.target.value)} placeholder="กรอก Line ID (ถ้ามี)" />
+                  </div>
+                </div>
+                
+                {/* Section 2 */}
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--red)', marginTop: '20px', marginBottom: '12px', borderLeft: '3px solid var(--red)', paddingLeft: '8px', fontWeight: 700 }}>2. สถานะการศึกษา / การทำงาน</h4>
+                
+                <div className="form-row">
+                  <div className="field" style={{ gridColumn: 'span 2' }}>
+                    <label>สถานะของคุณในปัจจุบัน <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <select name="employmentStatus" value={employmentStatus} onChange={(e) => setEmploymentStatus(e.target.value)} required>
+                      <option value="working">ทำงานแล้ว (Working Professional)</option>
+                      <option value="studying">กำลังศึกษาอยู่ (Student)</option>
+                      <option value="fresh_grad">เพิ่งจบ (ยังไม่ได้เริ่มงาน) (Fresh Graduate)</option>
+                    </select>
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="form-category" className="form-label">ระบบที่เกี่ยวข้อง</label>
-                  <select
-                    id="form-category"
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value as FeatureId)}
-                    className="form-select"
-                  >
-                    {Object.entries(categoryLabels).map(([id, label]) => (
-                      <option key={id} value={id}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="form-title" className="form-label">หัวข้อเรื่อง</label>
-                <input
-                  type="text"
-                  id="form-title"
-                  placeholder="เช่น ปัญหาเสียงแอร์ดังขณะจอดชาร์จ, เทคนิคตั้งโหมดเบาะนวด"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  className="form-input"
-                  maxLength={80}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="form-desc" className="form-label">คำอธิบายรายละเอียด</label>
-                <textarea
-                  id="form-desc"
-                  placeholder="รายละเอียดปัญหาที่พบ หรือเทคนิคที่ต้องการแชร์ให้เพื่อนๆ เจ้าของรถท่านอื่นทราบ"
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  className="form-textarea"
-                  rows={4}
-                  required
-                />
-              </div>
-
-              {formType === 'issue' && (
-                <div className="form-group animate-fade-slide">
-                  <label htmlFor="form-solution" className="form-label">แนวทางแก้ปัญหาเบื้องต้น (ถ้ามี)</label>
-                  <textarea
-                    id="form-solution"
-                    placeholder="เช่น เปิดฟังก์ชันในตั้งค่าแอป Changan Connect หรือกดรีบูตหน้าจอค้างไว้"
-                    value={formSolution}
-                    onChange={(e) => setFormSolution(e.target.value)}
-                    className="form-textarea"
-                    rows={3}
-                  />
-                </div>
-              )}
-
-              <div className="form-group">
-                <span className="form-label">รูปภาพประกอบ (ถ้ามี)</span>
-                {!formImage ? (
-                  <label className="file-upload-area">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      style={{ display: 'none' }}
+                <div className="form-row">
+                  <div className="field">
+                    <label>{
+                      employmentStatus === 'studying' ? 'ชื่อสถานศึกษา / มหาวิทยาลัย' :
+                      employmentStatus === 'fresh_grad' ? 'ชื่อสถานศึกษาที่สำเร็จการศึกษา' :
+                      'ชื่อบริษัท / หน่วยงาน'
+                    } <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <input 
+                      type="text" 
+                      name="company" 
+                      value={company} 
+                      onChange={(e) => setCompany(e.target.value)} 
+                      placeholder={
+                        employmentStatus === 'studying' ? 'ระบุชื่อสถาบัน/มหาวิทยาลัย' :
+                        employmentStatus === 'fresh_grad' ? 'ระบุชื่อสถาบัน/มหาวิทยาลัยเดิม' :
+                        'กรอกชื่อบริษัทหรือหน่วยงานของคุณ'
+                      } 
+                      required 
                     />
-                    <Images size={20} className="upload-icon" />
-                    <span>คลิกเพื่อเลือกหรืออัปโหลดรูปภาพ</span>
-                    <small>รองรับไฟล์รูปภาพทั่วไป ระบบจะย่อขนาดให้อัตโนมัติ</small>
-                  </label>
-                ) : (
-                  <div className="uploaded-preview-container">
-                    <img src={formImage} alt="Preview" className="uploaded-preview" />
-                    <button
-                      type="button"
-                      className="remove-image-btn"
-                      onClick={() => setFormImage('')}
-                      title="ลบรูปภาพ"
+                  </div>
+                  <div className="field">
+                    <label>{
+                      employmentStatus === 'studying' ? 'ระดับชั้นปี' :
+                      employmentStatus === 'fresh_grad' ? 'ปีที่สำเร็จการศึกษา (พ.ศ.)' :
+                      'ตำแหน่งงาน'
+                    } <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <input 
+                      type="text" 
+                      name="position" 
+                      value={position} 
+                      onChange={(e) => setPosition(e.target.value)} 
+                      placeholder={
+                        employmentStatus === 'studying' ? 'เช่น ปี 4, ปริญญาโท' :
+                        employmentStatus === 'fresh_grad' ? 'เช่น 2568' :
+                        'เช่น ผู้จัดการฝ่ายโลจิสติกส์'
+                      } 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="field">
+                    <label>{
+                      employmentStatus === 'studying' || employmentStatus === 'fresh_grad' ? 'คณะ / สาขาวิชา' :
+                      'แผนก / ฝ่าย'
+                    } <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <input 
+                      type="text" 
+                      name="department" 
+                      value={department} 
+                      onChange={(e) => setDepartment(e.target.value)} 
+                      placeholder={
+                        employmentStatus === 'studying' || employmentStatus === 'fresh_grad' ? 'เช่น คณะวิศวกรรมศาสตร์ สาขาโลจิสติกส์' :
+                        'เช่น ฝ่ายนำเข้า-ส่งออก'
+                      } 
+                      required 
+                    />
+                  </div>
+                  <div className="field">
+                    <label>ประเภทธุรกิจขององค์กร {employmentStatus === 'working' && <span style={{ color: 'var(--red)' }}>*</span>}</label>
+                    <select 
+                      name="businessType" 
+                      value={businessType} 
+                      onChange={(e) => setBusinessType(e.target.value)} 
+                      required={employmentStatus === 'working'}
+                      disabled={employmentStatus !== 'working'}
                     >
-                      <X size={14} />
-                    </button>
+                      {employmentStatus === 'working' ? (
+                        <>
+                          <option value="">-- เลือกประเภทธุรกิจ --</option>
+                          <option value="import_export">ธุรกิจนำเข้า-ส่งออก (Import / Export)</option>
+                          <option value="logistics">โลจิสติกส์ & ขนส่ง (Logistics & Transport)</option>
+                          <option value="shipping_broker">ตัวแทนออกของ / ชิปปิ้ง (Customs Broker)</option>
+                          <option value="manufacturing">โรงงานผลิต / อุตสาหกรรม (Manufacturing)</option>
+                          <option value="trading">ค้าปลีก-ค้าส่ง / เทรดดิ้ง (Trading)</option>
+                          <option value="other">อื่น ๆ</option>
+                        </>
+                      ) : (
+                        <option value="student_unemployed">นักศึกษา / ยังไม่ได้ทำงาน</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+                
+                {/* Section 3 */}
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--red)', marginTop: '20px', marginBottom: '12px', borderLeft: '3px solid var(--red)', paddingLeft: '8px', fontWeight: 700 }}>3. หลักสูตรและข้อมูลเพิ่มเติม</h4>
+                <div className="form-row">
+                  <div className="field">
+                    <label>หลักสูตรที่ต้องการสมัคร <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <select id="courseSelect" name="course" value={course} onChange={(e) => setCourse(e.target.value)} required>
+                      <option value="">-- เลือกหลักสูตร --</option>
+                      {getOpenCourses().map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.title} {c.batch && `(${c.batch})`}
+                        </option>
+                      ))}
+                      <option value="inhouse">ขอจัดอบรมภายในองค์กร (In-house Training)</option>
+                      <option value="other">สอบถามข้อมูลเพิ่มเติม</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>ทราบข่าวสารจากช่องทางใด <span style={{ color: 'var(--red)' }}>*</span></label>
+                    <select name="source" value={source} onChange={(e) => setSource(e.target.value)} required>
+                      <option value="">-- เลือกช่องทาง --</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="line">Line Official Account</option>
+                      <option value="website">เว็บไซต์ EBCI / RAKDI</option>
+                      <option value="referral">มีผู้แนะนำ / เพื่อนร่วมงาน</option>
+                      <option value="google">ค้นหาผ่าน Google</option>
+                      <option value="other">อื่น ๆ</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="field">
+                  <label>รายละเอียดหรือความต้องการเพิ่มเติม (เช่น อาหารพิเศษ/ข้อคำถาม)</label>
+                  <textarea name="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="กรอกรายละเอียดข้อสงสัย หรือความต้องการพิเศษเพิ่มเติม..."></textarea>
+                </div>
+                
+                <button type="submit" className="btn-submit" style={{ marginTop: '10px' }} disabled={isSubmitting}>
+                  {isSubmitting ? 'กำลังส่งข้อมูล...' : 'ส่งข้อมูลลงทะเบียน'}
+                </button>
+
+                {submitError && (
+                  <div style={{ color: 'var(--red)', marginTop: '10px', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center' }}>
+                    ⚠️ {submitError}
                   </div>
                 )}
-              </div>
 
-              <div className="form-group">
-                <label htmlFor="form-author" className="form-label">ชื่อ / นามแฝงผู้โพสต์</label>
-                <input
-                  type="text"
-                  id="form-author"
-                  placeholder="ระบุชื่อของคุณ (หากเว้นว่างไว้ ระบบจะแสดงเป็น 'ผู้ใช้ทั่วไป')"
-                  value={formAuthor}
-                  onChange={(e) => setFormAuthor(e.target.value)}
-                  className="form-input"
-                  maxLength={30}
-                />
-              </div>
+                {submitSuccess && (
+                  <div className="form-success">
+                    <span className="success-icon">✅</span>
+                    <p>ส่งข้อมูลเรียบร้อย! เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด</p>
+                  </div>
+                )}
+              </form>
+            </div>
+          </section>
+        </>
+      )}
 
-              <footer className="form-actions-row">
-                <button type="button" className="cancel-btn" onClick={() => setIsModalOpen(false)}>
-                  ยกเลิก
-                </button>
-                <button type="submit" className="submit-btn">
-                  บันทึกและโพสต์
-                </button>
-              </footer>
-            </form>
+      {view === 'archive' && (
+        /* Archive Page View */
+        <main style={{ paddingTop: '120px', paddingBottom: '80px', minHeight: '80vh', background: 'var(--bg-primary)' }}>
+          <div className="container">
+            {/* Back Button */}
+            <div style={{ marginBottom: '24px' }}>
+              <button 
+                onClick={() => { setView('home'); window.scrollTo({ top: 0 }); }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--maroon)', border: 'none', background: 'transparent', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', transition: 'var(--transition)' }}
+                className="back-btn"
+              >
+                <ArrowLeft size={16} /> กลับสู่หน้าหลัก
+              </button>
+            </div>
+
+            {/* Section Header */}
+            <div className="section-head reveal visible" style={{ marginBottom: '48px', textAlign: 'center' }}>
+              <span className="label">PAST SEMINARS & PORTFOLIO</span>
+              <h2>คลังหลักสูตรที่ <span className="text-accent">เสร็จสิ้นแล้ว</span></h2>
+              <p style={{ maxWidth: '600px', margin: '12px auto 0', color: 'var(--text-secondary)', fontSize: '1rem' }}>
+                ประวัติการจัดอบรมสัมมนาและหลักสูตรต่างๆ ของสถาบัน RAKDI ในช่วงเวลาที่ผ่านมา พร้อมข้อมูลเอกสารดาวน์โหลดและภาพบรรยากาศ
+              </p>
+            </div>
+
+            {/* Archive Grid */}
+            <div className="course-grid">
+              {getArchiveCourses().map((c) => {
+                const config = getStatusConfig(c.status);
+                return (
+                  <article key={c.id} className="course-card reveal visible" onClick={() => openModal(c.id)}>
+                    <div className="card-visual">
+                      <img src={c.image} alt={c.title} loading="lazy" />
+                      <div className={`card-ribbon ${config.ribbonClass}`}>{config.label}</div>
+                    </div>
+                    <div className="card-content">
+                      <span className="card-tag">{c.category}</span>
+                      <h3>{c.title}{c.batch && <small style={{ fontWeight: 400, color: 'var(--text-muted)', display: 'block', fontSize: '0.8rem', marginTop: '4px' }}>({c.batch})</small>}</h3>
+                      <p>{c.description}</p>
+                      <div className="card-bottom">
+                        <div className={`card-status-badge ${config.badgeClass}`}>{config.icon} {config.label}</div>
+                        {c.rating ? (
+                          <span className="card-rating" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Star size={13} fill="currentColor" /> {c.rating}/5
+                          </span>
+                        ) : (
+                          <span className="card-price">{c.price}</span>
+                        )}
+                      </div>
+                      <button className="btn-card" type="button">ดูผลงาน</button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </main>
       )}
-    </div>
-  )
-}
 
-type VisualStageProps = {
-  image?: ImageAsset
-  activeFeatureId: FeatureId
-  onFeatureChange: (featureId: FeatureId) => void
-}
+      {view === 'aug-sem1' && (
+        <LogisticsSeminarBrief onBackToHome={() => {
+          setView('home');
+          if (window.location.pathname.endsWith('/aug-sem1')) {
+            window.history.pushState(null, '', '/');
+          } else {
+            window.location.hash = '';
+          }
+        }} />
+      )}
 
-type ModelSelectProps = {
-  activeModelId: ModelId
-  onChange: (modelId: ModelId) => void
-}
+      {/* Course Detail Modal Panel */}
+      <div className={`modal-overlay ${selectedCourseId ? 'open' : ''}`} onClick={closeModal}>
+        {selectedCourse && (
+          <div className="modal-panel animate-fade-slide" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={closeModal} aria-label="ปิด">&times;</button>
+            <img className="modal-hero-img" src={selectedCourse.image} alt={selectedCourse.title} />
+            <div className="modal-body">
+              <div className={`modal-badge ${getStatusConfig(selectedCourse.status).badgeClass}`}>
+                {getStatusConfig(selectedCourse.status).icon} {getStatusConfig(selectedCourse.status).label}
+              </div>
+              <h2 className="modal-title">{selectedCourse.title}</h2>
+              {selectedCourse.subtitle && <p className="modal-batch">{selectedCourse.subtitle} {selectedCourse.batch && `— ${selectedCourse.batch}`}</p>}
 
-function ModelSelect({ activeModelId, onChange }: ModelSelectProps) {
-  return (
-    <label className="model-select-control" aria-label="เลือกรุ่นรถยนต์">
-      <select value={activeModelId} onChange={(event) => onChange(event.target.value as ModelId)}>
-        {models.map((model) => (
-          <option key={model.id} value={model.id} disabled={model.status === 'future'}>
-            {model.name}{model.status === 'future' ? ' (เร็วๆ นี้)' : ''}
-          </option>
-        ))}
-      </select>
-      <ChevronDown size={16} />
-    </label>
-  )
-}
+              {/* Meta details */}
+              <div className="modal-meta">
+                <div className="meta-item">
+                  <span className="meta-label">📅 วันที่จัด</span>
+                  <span className="meta-value">{selectedCourse.date}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">📍 สถานที่</span>
+                  <span className="meta-value">{selectedCourse.location}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">
+                    {selectedCourse.status === 'completed' ? '👥 ผู้เข้าร่วม' : '💰 ค่าลงทะเบียน'}
+                  </span>
+                  <span className="meta-value">
+                    {selectedCourse.status === 'completed' && selectedCourse.attendees 
+                      ? `${selectedCourse.attendees} คน` 
+                      : selectedCourse.price
+                    }
+                  </span>
+                </div>
+              </div>
 
-type ScreenCapturePanelProps = {
-  captures: ScreenCapture[]
-  activeFeatureLabel: string
-  selectedImage?: ImageAsset
-  onSelect: (id: string) => void
-}
+              {/* Course summary for completed */}
+              {selectedCourse.status === 'completed' && selectedCourse.summary && (
+                <div className="modal-summary" style={{ background: 'var(--silver-light)', border: '1px solid var(--border-color)', padding: '16px', borderRadius: '12px', marginBottom: '24px', color: 'var(--text-secondary)' }}>
+                  <p>{selectedCourse.summary}</p>
+                </div>
+              )}
 
-function ScreenCapturePanel({ captures, activeFeatureLabel, selectedImage, onSelect }: ScreenCapturePanelProps) {
-  return (
-    <section className="screen-capture-section">
-      <div className="screen-capture-header">
-        <div>
-          <p className="model-line">ภาพนิ่งจากคลิปคู่มือ</p>
-          <h2>
-            <MonitorPlay size={20} />
-            ภาพเมนูจากคลิป
-          </h2>
-        </div>
-        <span>{captures.length} ภาพ / {activeFeatureLabel}</span>
+              {/* Lecture Topics */}
+              {selectedCourse.details.topics.length > 0 && (
+                <>
+                  <h4 className="modal-section-title">
+                    {selectedCourse.status === 'completed' ? 'เนื้อหาที่อบรม' : 'เนื้อหาหลักสูตร'}
+                  </h4>
+                  <ul className="modal-topics">
+                    {selectedCourse.details.topics.map((t, idx) => (
+                      <li key={idx}>{t}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {/* Speakers list */}
+              {selectedCourse.details.speakers.length > 0 && (
+                <>
+                  <h4 className="modal-section-title">วิทยากรประจำหลักสูตร</h4>
+                  <div className="modal-speakers">
+                    {selectedCourse.details.speakers.map((s, idx) => (
+                      <div key={idx} className="speaker-card">
+                        <div className="speaker-avatar">{s.name.charAt(0)}</div>
+                        <div className="speaker-info">
+                          <span className="speaker-name">{s.name}</span>
+                          <span className="speaker-role">{s.role}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Benefits (for non-completed) */}
+              {selectedCourse.status !== 'completed' && selectedCourse.details.benefits.length > 0 && (
+                <>
+                  <h4 className="modal-section-title">สิ่งที่จะได้รับ</h4>
+                  <div className="modal-benefits">
+                    {selectedCourse.details.benefits.map((b, idx) => (
+                      <span key={idx} className="benefit-tag">✅ {b}</span>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Image Gallery */}
+              {selectedCourse.gallery.length > 0 && (
+                <>
+                  <h4 className="modal-section-title">ภาพบรรยากาศการอบรม</h4>
+                  <div className="modal-gallery">
+                    {selectedCourse.gallery.map((img, idx) => (
+                      <img key={idx} src={img} alt="ภาพกิจกรรม" loading="lazy" />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Downloads list */}
+              {selectedCourse.downloads.length > 0 && (
+                <>
+                  <h4 className="modal-section-title">ดาวน์โหลดเอกสาร</h4>
+                  <div className="modal-downloads">
+                    {selectedCourse.downloads.map((d, idx) => (
+                      <a key={idx} href={d.url} className="download-item" target="_blank" rel="noopener noreferrer">
+                        <span className="download-icon">📄</span>
+                        <span className="download-label">{d.label}</span>
+                        <span className="download-ext">{d.ext}</span>
+                      </a>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Modal CTA Buttons */}
+              <div className="modal-cta">
+                {selectedCourse.status === 'open' && (
+                  <button className="btn-modal-register" onClick={() => registerFromModal(selectedCourse.id)}>สมัครเลย →</button>
+                )}
+                {selectedCourse.status === 'coming_soon' && (
+                  <button className="btn-modal-register" onClick={() => registerFromModal(selectedCourse.id)}>แจ้งเตือนเมื่อเปิดรับ →</button>
+                )}
+                {selectedCourse.status === 'completed' && (
+                  <button className="btn-modal-browse" onClick={closeModal}>ดูหลักสูตรอื่นๆ</button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {captures.length ? (
-        <div className="screen-capture-grid">
-          {captures.map((capture) => (
-            <button
-              key={capture.id}
-              type="button"
-              className={`screen-capture-card ${selectedImage?.id === capture.id ? 'is-active' : ''}`}
-              onClick={() => onSelect(capture.id)}
-            >
-              <img src={capture.src} alt={capture.alt} loading="lazy" />
-              <span>
-                <strong>{capture.title}</strong>
-                <small>{capture.note}</small>
-              </span>
-            </button>
-          ))}
+      {/* Footer */}
+      <footer className="footer">
+        <div className="container footer-inner">
+          <div className="footer-brand">
+            <img src="https://ebcinext.com/wp-content/uploads/2021/03/rdlogo1-3.png" alt="RAKDI" />
+            <p>สถาบันวิจัยและพัฒนาความรู้ RAKDI ภายใต้เครือ บริษัท อีบีซีไอ จำกัด</p>
+          </div>
+          <div className="footer-copy">© 2026 RAKDI by EBCI Ltd. All rights reserved.</div>
         </div>
-      ) : (
-        <p className="screen-capture-empty">
-          ยังไม่มีภาพเมนูจากคลิปสำหรับหัวข้อนี้
-        </p>
-      )}
-    </section>
-  )
-}
-
-function VisualStage({ image, activeFeatureId, onFeatureChange }: VisualStageProps) {
-  const hotspots: Array<{ id: FeatureId; label: string; x: number; y: number }> = [
-    { id: 'screen', label: 'หน้าจอ', x: 50, y: 48 },
-    { id: 'comfort', label: 'ห้องโดยสาร', x: 39, y: 55 },
-    { id: 'charging', label: 'ชาร์จ', x: 76, y: 63 },
-    { id: 'exterior', label: 'ภายนอก', x: 25, y: 62 },
-    { id: 'safety', label: 'Safety', x: 64, y: 35 },
-  ]
-
-  return (
-    <div className="viewer-panel visual-stage">
-      {image ? <img className="stage-image" src={image.src} alt={image.alt} /> : null}
-      <div className="stage-caption">
-        <strong>{image?.title}</strong>
-        <span>{image?.kind === 'capture' ? 'ภาพนิ่งจากคลิปคู่มือที่คัดแยกไว้' : 'ภาพตลาดไทยจาก CHANGAN Thailand'}</span>
-      </div>
-      {hotspots.map((hotspot) => (
-        <button
-          key={hotspot.id}
-          type="button"
-          className={`part-marker ${activeFeatureId === hotspot.id ? 'is-active' : ''}`}
-          style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
-          onClick={() => onFeatureChange(hotspot.id)}
-        >
-          <span />
-          {hotspot.label}
-        </button>
-      ))}
+      </footer>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

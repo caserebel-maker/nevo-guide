@@ -1,0 +1,392 @@
+/* Logistics Seminar Brief Page Styles */
+
+:root {
+  --brief-navy-dark: #06152F;
+  --brief-deep-blue: #0B2A55;
+  --brief-blue: #123E75;
+  --brief-cyan: #2CB7E8;
+  --brief-white: #FFFFFF;
+  --brief-light-blue: #BFD9F2;
+  --brief-gold: #F5C542;
+  --brief-bg-glass: rgba(11, 42, 85, 0.65);
+  --brief-border-glass: rgba(44, 183, 232, 0.25);
+  --brief-transition: all 0.25s ease;
+}
+
+.brief-page-wrapper {
+  background: linear-gradient(135deg, var(--brief-navy-dark) 0%, var(--brief-deep-blue) 45%, var(--brief-blue) 100%);
+  min-height: 100vh;
+  color: var(--brief-white);
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  padding: 40px 20px 100px;
+}
+
+.brief-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header & Back Nav */
+.brief-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.brief-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--brief-light-blue);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--brief-transition);
+}
+
+.brief-back-btn:hover {
+  background: var(--brief-cyan);
+  color: var(--brief-navy-dark);
+  border-color: var(--brief-cyan);
+  transform: translateX(-3px);
+}
+
+.brief-badge-live {
+  background: rgba(44, 183, 232, 0.15);
+  border: 1px solid var(--brief-cyan);
+  color: var(--brief-cyan);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+/* Hero Section */
+.brief-hero {
+  text-align: center;
+  margin-bottom: 50px;
+  padding: 40px 20px;
+  background: var(--brief-bg-glass);
+  border: 1px solid var(--brief-border-glass);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.brief-hero .brief-category {
+  color: var(--brief-cyan);
+  font-weight: bold;
+  letter-spacing: 2px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.brief-hero h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+
+.brief-hero h1 span {
+  color: var(--brief-gold);
+}
+
+.brief-hero p {
+  color: var(--brief-light-blue);
+  font-size: 1.1rem;
+  max-width: 800px;
+  margin: 0 auto 24px;
+}
+
+.brief-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.brief-meta-card {
+  background: rgba(6, 21, 47, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.brief-meta-card label {
+  color: var(--brief-cyan);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.brief-meta-card span {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.brief-meta-card a {
+  color: var(--brief-gold);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+/* Glassmorphism Section Layout */
+.brief-section {
+  background: var(--brief-bg-glass);
+  border: 1px solid var(--brief-border-glass);
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 35px;
+  backdrop-filter: blur(10px);
+}
+
+.brief-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--brief-cyan);
+  padding-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brief-section h2 span {
+  color: var(--brief-gold);
+}
+
+/* Overview Layout */
+.brief-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+@media (max-width: 768px) {
+  .brief-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.brief-overview-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.brief-overview-list li {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  color: var(--brief-light-blue);
+}
+
+.brief-overview-list li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--brief-cyan);
+}
+
+/* Timetable / Rundown Table */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rundown-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 800px;
+}
+
+.rundown-table th {
+  background: rgba(6, 21, 47, 0.85);
+  color: var(--brief-cyan);
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-bottom: 2px solid var(--brief-border-glass);
+}
+
+.rundown-table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: top;
+}
+
+.rundown-table tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.td-time {
+  width: 120px;
+  font-family: monospace;
+  font-weight: bold;
+  color: var(--brief-gold);
+  font-size: 1rem;
+}
+
+.td-topic {
+  width: 250px;
+  font-weight: 700;
+}
+
+.td-topic span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--brief-light-blue);
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.td-pic {
+  width: 180px;
+  font-weight: bold;
+}
+
+.td-pic small {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--brief-cyan);
+  font-weight: normal;
+}
+
+.td-details {
+  color: var(--brief-light-blue);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Speakers grid */
+.brief-speakers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.brief-speaker-card {
+  background: rgba(6, 21, 47, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  transition: var(--brief-transition);
+}
+
+.brief-speaker-card:hover {
+  border-color: var(--brief-cyan);
+  transform: translateY(-2px);
+}
+
+.brief-speaker-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--brief-cyan);
+  color: var(--brief-navy-dark);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.brief-speaker-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.brief-speaker-name {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.brief-speaker-role {
+  font-size: 0.8rem;
+  color: var(--brief-light-blue);
+  line-height: 1.3;
+}
+
+/* Checklist layout */
+.brief-checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.brief-checklist-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.brief-checklist-card h3 {
+  color: var(--brief-gold);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.brief-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: var(--brief-light-blue);
+}
+
+.brief-check-checkbox {
+  accent-color: var(--brief-cyan);
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+/* MC Script Section */
+.script-guide-box {
+  background: rgba(245, 197, 66, 0.06);
+  border: 1px dashed var(--brief-gold);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 15px;
+}
+
+.script-guide-box h4 {
+  color: var(--brief-gold);
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+.script-guide-box p {
+  color: var(--brief-light-blue);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.script-guide-box p:last-child {
+  margin-bottom: 0;
+}
