@@ -165,10 +165,10 @@ function App() {
     const handleRouting = () => {
       const path = window.location.pathname;
       const hash = window.location.hash;
-      if (path.endsWith('/aug-sem1') || hash === '#aug-sem1') {
+      if (path.includes('/aug-sem1') || hash === '#aug-sem1') {
         setView((prev) => prev !== 'aug-sem1' ? 'aug-sem1' : prev);
         window.scrollTo({ top: 0 });
-      } else if (path.endsWith('/archive') || hash === '#archive') {
+      } else if (path.includes('/archive') || hash === '#archive') {
         setView((prev) => prev !== 'archive' ? 'archive' : prev);
         window.scrollTo({ top: 0 });
       } else {
